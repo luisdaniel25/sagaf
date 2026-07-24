@@ -5,40 +5,43 @@
  */
 
 namespace App\Models;
-
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class Regionale
- * 
- * @property int $Codigo
- * @property string $reg_Denominacion
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property Collection|Aprendiz[] $aprendizs
- * @property Collection|CentroFormacion[] $centro_formacions
- *
- * @package App\Models
- */
 class Regionale extends Model
 {
-	protected $table = 'tbl_regionales';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_regionales';
 
-	protected $fillable = [
-		'reg_Denominacion'
-	];
+    protected $primaryKey = 'Codigo';
 
-	public function aprendizs()
-	{
-		return $this->hasMany(Aprendiz::class, 'Codigo_regional');
-	}
+    protected $fillable = [
+        'reg_Denominacion',
+    ];
 
-	public function centro_formacions()
-	{
-		return $this->hasMany(CentroFormacion::class, 'Codigo_regional');
-	}
+    public function aprendices(): HasMany
+    {
+        return $this->hasMany(
+            Aprendiz::class,
+            'Codigo_regional'
+        );
+    }
+
+    public function centrosFormacion(): HasMany
+    {
+        return $this->hasMany(
+            CentroFormacion::class,
+            'Codigo_regional'
+        );
+    }
+
+    public function scopePorNombre(
+        $query,
+        string $nombre
+    )
+    {
+        return $query->where(
+            'reg_Denominacion',
+            $nombre
+        );
+    }
 }

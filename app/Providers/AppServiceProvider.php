@@ -2,10 +2,9 @@
 
 namespace App\Providers;
 
-use App\Services\NotificacionService;
-use Illuminate\Support\ServiceProvider;
 use App\Models\AsignacionesInstructore;
 use App\Observers\AsignacionesInstructorObserver;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,9 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(NotificacionService::class, function ($app) {
-            return new NotificacionService();
-        });
+        //
     }
 
     /**
@@ -24,7 +21,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Registrar el observer
-        AsignacionesInstructore::observe(AsignacionesInstructorObserver::class);
+        $this->registerObservers();
+    }
+
+    private function registerObservers(): void
+    {
+        AsignacionesInstructore::observe(
+            AsignacionesInstructorObserver::class
+        );
     }
 }

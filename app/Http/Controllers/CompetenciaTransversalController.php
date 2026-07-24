@@ -2,46 +2,88 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CompetenciaStoreRequest;
+use App\Http\Requests\CompetenciaUpdateRequest;
 use App\Models\Competencia;
+use App\Services\CompetenciaService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CompetenciaTransversalController extends Controller
 {
-    public function index()
-    {
-        return Competencia::all();
+    public function __construct(
+        private readonly CompetenciaService $service
+    ) {
     }
 
-    public function store(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $competencia = Competencia::create($request->all());
+        $competencias = Competencia::query()
+            ->with([
+                'programa',
+                'resultado_aprendizajes'
+            ])
+            ->paginate(
+                $request->integer('per_page', 15)
+            );
+
+        return response()->json($competencias);
+    }
+
+    public function store(
+        CompetenciaStoreRequest $request
+    ): JsonResponse {
+
+        $competencia = $this->service->store(
+            $request->validated()
+        );
 
         return response()->json([
-            'message' => 'Competencia creada correctamente',
+            'message' => 'Competencia creada correctamente.',
+            'data' => $competencia,
+        ], 201);
+    }
+
+    public function show(
+        Competencia $competencia
+    ): JsonResponse {
+
+        $competencia->load([
+            'programa',
+            'resultado_aprendizajes'
+        ]);
+
+        return response()->json([
             'data' => $competencia
         ]);
     }
 
-    public function show($id)
-    {
-        return Competencia::findOrFail($id);
-    }
+    public function update(
+        CompetenciaUpdateRequest $request,
+        Competencia $competencia
+    ): JsonResponse {
 
-    public function update(Request $request, $id)
-    {
-        $competencia = Competencia::findOrFail($id);
-        $competencia->update($request->all());
+        $this->service->update(
+            $competencia,
+            $request->validated()
+        );
 
         return response()->json([
-            'message' => 'Competencia actualizada',
-            'data' => $competencia
+            'message' => 'Competencia actualizada correctamente.',
+            'data' => $competencia->fresh()
         ]);
     }
 
-    public function destroy($id)
-    {
-        Competencia::destroy($id);
+    public function destroy(
+        Competencia $competencia
+    ): JsonResponse {
 
-        return response()->json(['message' => 'Competencia eliminada']);
+        $this->service->delete(
+            $competencia
+        );
+
+        return response()->json([
+            'message' => 'Competencia eliminada correctamente.'
+        ]);
     }
 }

@@ -5,32 +5,37 @@
  */
 
 namespace App\Models;
-
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class TipoCompetencia
- * 
- * @property int $Codigo
- * @property string|null $tipo_Denominacion
- * 
- * @property Collection|Competencia[] $competencias
- *
- * @package App\Models
- */
 class TipoCompetencia extends Model
 {
-	protected $table = 'tbl_tipo_competencias';
-	protected $primaryKey = 'Codigo';
-	public $timestamps = false;
+    protected $table = 'tbl_tipo_competencias';
 
-	protected $fillable = [
-		'tipo_Denominacion'
-	];
+    protected $primaryKey = 'Codigo';
 
-	public function competencias()
-	{
-		return $this->hasMany(Competencia::class, 'Codigo_tipo');
-	}
+    public $timestamps = false;
+
+    protected $fillable = [
+        'tipo_Denominacion',
+    ];
+
+    public function competencias(): HasMany
+    {
+        return $this->hasMany(
+            Competencia::class,
+            'Codigo_tipo'
+        );
+    }
+
+    public function scopePorNombre(
+        $query,
+        string $nombre
+    )
+    {
+        return $query->where(
+            'tipo_Denominacion',
+            $nombre
+        );
+    }
 }

@@ -9,48 +9,53 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class CentroFormacion
- * 
- * @property int $Codigo
- * @property string $cent_Denominacion
- * @property int $Codigo_regional
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property Regionale $regionale
- * @property Collection|Aprendiz[] $aprendizs
- * @property Collection|FichaCaracterizacion[] $ficha_caracterizacions
- *
- * @package App\Models
- */
 class CentroFormacion extends Model
 {
-	protected $table = 'tbl_centro_formacions';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_centro_formacions';
 
-	protected $casts = [
-		'Codigo_regional' => 'int'
-	];
+    protected $primaryKey = 'Codigo';
 
-	protected $fillable = [
-		'cent_Denominacion',
-		'Codigo_regional'
-	];
+    protected $casts = [
+        'Codigo_regional' => 'integer',
+    ];
 
-	public function regionale()
-	{
-		return $this->belongsTo(Regionale::class, 'Codigo_regional');
-	}
+    protected $fillable = [
+        'cent_Denominacion',
+        'Codigo_regional',
+    ];
 
-	public function aprendizs()
-	{
-		return $this->hasMany(Aprendiz::class, 'Codigo_centro');
-	}
+    public function regionale(): BelongsTo
+    {
+        return $this->belongsTo(
+            Regionale::class,
+            'Codigo_regional'
+        );
+    }
 
-	public function ficha_caracterizacions()
-	{
-		return $this->hasMany(FichaCaracterizacion::class, 'Codigo_centro');
-	}
+    public function aprendices(): HasMany
+    {
+        return $this->hasMany(
+            Aprendiz::class,
+            'Codigo_centro'
+        );
+    }
+
+    public function fichasCaracterizacion(): HasMany
+    {
+        return $this->hasMany(
+            FichaCaracterizacion::class,
+            'Codigo_centro'
+        );
+    }
+
+    public function scopeRegional($query, int $regionalId)
+    {
+        return $query->where(
+            'Codigo_regional',
+            $regionalId
+        );
+    }
 }

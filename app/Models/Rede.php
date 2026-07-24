@@ -5,40 +5,43 @@
  */
 
 namespace App\Models;
-
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class Rede
- * 
- * @property int $Codigo
- * @property string $red_Denominacion
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property Collection|Especialidade[] $especialidades
- * @property Collection|Vigencia[] $vigencias
- *
- * @package App\Models
- */
 class Rede extends Model
 {
-	protected $table = 'tbl_redes';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_redes';
 
-	protected $fillable = [
-		'red_Denominacion'
-	];
+    protected $primaryKey = 'Codigo';
 
-	public function especialidades()
-	{
-		return $this->hasMany(Especialidade::class, 'Codigo_red');
-	}
+    protected $fillable = [
+        'red_Denominacion',
+    ];
 
-	public function vigencias()
-	{
-		return $this->hasMany(Vigencia::class, 'Codigo_red');
-	}
+    public function especialidades(): HasMany
+    {
+        return $this->hasMany(
+            Especialidade::class,
+            'Codigo_red'
+        );
+    }
+
+    public function vigencias(): HasMany
+    {
+        return $this->hasMany(
+            Vigencia::class,
+            'Codigo_red'
+        );
+    }
+
+    public function scopePorNombre(
+        $query,
+        string $nombre
+    )
+    {
+        return $query->where(
+            'red_Denominacion',
+            $nombre
+        );
+    }
 }

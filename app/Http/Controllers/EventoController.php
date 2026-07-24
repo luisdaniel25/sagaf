@@ -2,149 +2,117 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EventoStoreRequest;
+use App\Http\Requests\EventoUpdateRequest;
 use App\Models\Evento;
-use Illuminate\Http\Request;
+use App\Services\EventoService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class EventoController extends Controller
 {
-    /**
-     * Mostrar todos los eventos registrados.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function index()
-    {
-        // Cargar relaciones necesarias para mostrar información completa
-        $eventos = Evento::with([
-            'ambiente',
-            'competencia',
-            'ficha',
-            'instructor',
-            'resultadoAprendizaje'
-        ])->get();
-
-        return view('eventos.index', compact('eventos'));
+    public function __construct(
+        private readonly EventoService $service
+    ) {
     }
 
-    /**
-     * Mostrar el formulario para crear un nuevo evento.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function create()
+    public function index(): View
+    {
+        $eventos = Evento::query()
+            ->with([
+                'ambiente',
+                'competencia',
+                'ficha',
+                'instructor',
+                'resultadoAprendizaje'
+            ])
+            ->latest('Codigo')
+            ->paginate(15);
+
+        return view(
+            'eventos.index',
+            compact('eventos')
+        );
+    }
+
+    public function create(): View
     {
         return view('eventos.create');
     }
 
-    /**
-     * Almacenar un nuevo evento en la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store(Request $request)
-    {
-        // Validar los datos ingresados
-        $data = $request->validate([
-            'title'        => 'required|string|max:255',
-            'descripcion'  => 'required|string',
-            'color'        => 'nullable|string|max:20',
-            'start'        => 'required|date',
-            'end'          => 'required|date|after_or_equal:start',
-            'horaInicio'   => 'required|string',
-            'horaFinal'    => 'required|string',
-            'Codigo_resultado_aprendizaje' => 'nullable|integer',
-            'Codigo_instructor'            => 'nullable|integer',
-            'Codigo_ficha'                 => 'nullable|integer',
-            'Codigo_ambiente'              => 'nullable|integer',
-            'Codigo_competencia'           => 'nullable|integer',
-        ]);
+    public function store(
+        EventoStoreRequest $request
+    ): RedirectResponse {
 
-        // Crear el evento
-        Evento::create($data);
+        $this->service->store(
+            $request->validated()
+        );
 
-        return redirect()->route('eventos.index')
-            ->with('success', 'Evento creado correctamente');
+        return redirect()
+            ->route('eventos.index')
+            ->with(
+                'success',
+                'Evento creado correctamente.'
+            );
     }
 
-    /**
-     * Mostrar un evento específico.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
-     */
-    public function show($id)
-    {
-        $evento = Evento::with([
+    public function show(
+        Evento $evento
+    ): View {
+
+        $evento->load([
             'ambiente',
             'competencia',
             'ficha',
             'instructor',
             'resultadoAprendizaje'
-        ])->findOrFail($id);
-
-        return view('eventos.show', compact('evento'));
-    }
-
-    /**
-     * Mostrar el formulario para editar un evento.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
-     */
-    public function edit($id)
-    {
-        $evento = Evento::findOrFail($id);
-
-        return view('eventos.edit', compact('evento'));
-    }
-
-    /**
-     * Actualizar un evento existente en la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update(Request $request, $id)
-    {
-        $evento = Evento::findOrFail($id);
-
-        // Validar los datos ingresados
-        $data = $request->validate([
-            'title'        => 'required|string|max:255',
-            'descripcion'  => 'required|string',
-            'color'        => 'nullable|string|max:20',
-            'start'        => 'required|date',
-            'end'          => 'required|date|after_or_equal:start',
-            'horaInicio'   => 'required|string',
-            'horaFinal'    => 'required|string',
-            'Codigo_resultado_aprendizaje' => 'nullable|integer',
-            'Codigo_instructor'            => 'nullable|integer',
-            'Codigo_ficha'                 => 'nullable|integer',
-            'Codigo_ambiente'              => 'nullable|integer',
-            'Codigo_competencia'           => 'nullable|integer',
         ]);
 
-        // Actualizar el evento
-        $evento->update($data);
-
-        return redirect()->route('eventos.index')
-            ->with('success', 'Evento actualizado correctamente');
+        return view(
+            'eventos.show',
+            compact('evento')
+        );
     }
 
-    /**
-     * Eliminar un evento de la base de datos.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function destroy($id)
-    {
-        $evento = Evento::findOrFail($id);
-        $evento->delete();
+    public function edit(
+        Evento $evento
+    ): View {
 
-        return redirect()->route('eventos.index')
-            ->with('success', 'Evento eliminado correctamente');
+        return view(
+            'eventos.edit',
+            compact('evento')
+        );
+    }
+
+    public function update(
+        EventoUpdateRequest $request,
+        Evento $evento
+    ): RedirectResponse {
+
+        $this->service->update(
+            $evento,
+            $request->validated()
+        );
+
+        return redirect()
+            ->route('eventos.index')
+            ->with(
+                'success',
+                'Evento actualizado correctamente.'
+            );
+    }
+
+    public function destroy(
+        Evento $evento
+    ): RedirectResponse {
+
+        $this->service->delete($evento);
+
+        return redirect()
+            ->route('eventos.index')
+            ->with(
+                'success',
+                'Evento eliminado correctamente.'
+            );
     }
 }

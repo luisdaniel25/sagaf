@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Programa
- * 
+ *
  * @property int $prog_codigoPrograma
  * @property string $prog_Denominacion
  * @property int $prog_version
@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $prog_metodologia
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * 
+ *
  * @property Collection|Aprendiz[] $aprendizs
  * @property Collection|Competencia[] $competencias
  * @property Collection|FichaCaracterizacion[] $ficha_caracterizacions
@@ -42,12 +42,15 @@ class Programa extends Model
 	protected $table = 'tbl_programas';
 	protected $primaryKey = 'prog_codigoPrograma';
 
-	protected $casts = [
-		'prog_version' => 'int',
-		'prog_etapaLectiva' => 'int',
-		'prog_etapaProductiva' => 'int',
-		'prog_totalHoras' => 'int'
-	];
+    protected $casts = [
+        'prog_version' => 'integer',
+        'prog_HorasEstimadas' => 'integer',
+        'prog_Creditos' => 'integer',
+        'prog_DuracionMeses' => 'integer',
+        'prog_etapaLectiva' => 'integer',
+        'prog_etapaProductiva' => 'integer',
+        'prog_totalHoras' => 'integer',
+    ];
 
 	protected $fillable = [
 		'prog_Denominacion',
@@ -84,4 +87,11 @@ class Programa extends Model
 	{
 		return $this->hasMany(PerfilInstructor::class, 'Codigo_programa');
 	}
+    public function nivelFormacion()
+    {
+        return $this->belongsTo(
+            NivelFormacion::class,
+            'Codigo_nivel_formacion'
+        );
+    }
 }

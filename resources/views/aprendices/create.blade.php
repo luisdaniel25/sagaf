@@ -84,16 +84,43 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="apr_TipoDocumento" class="font-weight-bold">Tipo Documento *</label>
-                                    <select name="apr_TipoDocumento"
-                                            id="apr_TipoDocumento"
-                                            class="form-control @error('apr_TipoDocumento') is-invalid @enderror"
-                                            required>
-                                        <option value="">Seleccione...</option>
-                                        <option value="Cédula" {{ old('apr_TipoDocumento') == 'Cédula' ? 'selected' : '' }}>Cédula</option>
-                                        <option value="Tarjeta Identidad" {{ old('apr_TipoDocumento') == 'Tarjeta Identidad' ? 'selected' : '' }}>Tarjeta Identidad</option>
-                                        <option value="Cédula Extranjería" {{ old('apr_TipoDocumento') == 'Cédula Extranjería' ? 'selected' : '' }}>Cédula Extranjería</option>
-                                        <option value="Pasaporte" {{ old('apr_TipoDocumento') == 'Pasaporte' ? 'selected' : '' }}>Pasaporte</option>
+                                    <select
+                                        name="apr_TipoDocumento"
+                                        id="apr_TipoDocumento"
+                                        class="form-control @error('apr_TipoDocumento') is-invalid @enderror"
+                                        required>
+
+                                        <option value="">
+                                            Seleccione...
+                                        </option>
+
+                                        <option value="Cédula"
+                                            @selected(old('apr_TipoDocumento') == 'Cédula')>
+                                            Cédula
+                                        </option>
+
+                                        <option value="Tarjeta Identidad"
+                                            @selected(old('apr_TipoDocumento') == 'Tarjeta Identidad')>
+                                            Tarjeta Identidad
+                                        </option>
+
+                                        <option value="Cédula Extranjería"
+                                            @selected(old('apr_TipoDocumento') == 'Cédula Extranjería')>
+                                            Cédula Extranjería
+                                        </option>
+
+                                        <option value="Pasaporte"
+                                            @selected(old('apr_TipoDocumento') == 'Pasaporte')>
+                                            Pasaporte
+                                        </option>
+
                                     </select>
+
+                                    @error('apr_TipoDocumento')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                    @enderror
                                     @error('apr_TipoDocumento')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -133,16 +160,43 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="apr_Jornada" class="font-weight-bold">Jornada *</label>
-                                    <select name="apr_Jornada"
-                                            id="apr_Jornada"
-                                            class="form-control @error('apr_Jornada') is-invalid @enderror"
-                                            required>
-                                        <option value="">Seleccione...</option>
-                                        <option value="Mañana" {{ old('apr_Jornada') == 'Mañana' ? 'selected' : '' }}>Mañana</option>
-                                        <option value="Tarde" {{ old('apr_Jornada') == 'Tarde' ? 'selected' : '' }}>Tarde</option>
-                                        <option value="Noche" {{ old('apr_Jornada') == 'Noche' ? 'selected' : '' }}>Noche</option>
-                                        <option value="Mixta" {{ old('apr_Jornada') == 'Mixta' ? 'selected' : '' }}>Mixta</option>
+                                    <select
+                                        name="apr_Jornada"
+                                        id="apr_Jornada"
+                                        class="form-control @error('apr_Jornada') is-invalid @enderror"
+                                        required>
+
+                                        <option value="">
+                                            Seleccione...
+                                        </option>
+
+                                        <option value="Mañana"
+                                            @selected(old('apr_Jornada') == 'Mañana')>
+                                            Mañana
+                                        </option>
+
+                                        <option value="Tarde"
+                                            @selected(old('apr_Jornada') == 'Tarde')>
+                                            Tarde
+                                        </option>
+
+                                        <option value="Noche"
+                                            @selected(old('apr_Jornada') == 'Noche')>
+                                            Noche
+                                        </option>
+
+                                        <option value="Mixta"
+                                            @selected(old('apr_Jornada') == 'Mixta')>
+                                            Mixta
+                                        </option>
+
                                     </select>
+
+                                    @error('apr_Jornada')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                    @enderror
                                     @error('apr_Jornada')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -232,16 +286,35 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="Codigo_ficha" class="font-weight-bold">Ficha *</label>
-                                    <select name="Codigo_ficha"
-                                            id="Codigo_ficha"
-                                            class="form-control @error('Codigo_ficha') is-invalid @enderror"
-                                            required>
-                                        <option value="">Seleccione una ficha...</option>
+                                    <select
+                                        name="Codigo_ficha"
+                                        id="Codigo_ficha"
+                                        class="form-control @error('Codigo_ficha') is-invalid @enderror"
+                                        required>
+
+                                        <option value="">
+                                            Seleccione una ficha...
+                                        </option>
+
                                         @foreach($fichas as $ficha)
-                                            <option value="{{ $ficha->Codigo }}" {{ old('Codigo_ficha') == $ficha->Codigo ? 'selected' : '' }}>
-                                                {{ $ficha->Codigo }} - {{ $ficha->programa->prog_Denominacion ?? 'Sin programa' }}
+
+                                            <option
+                                                value="{{ $ficha->Codigo }}"
+                                                @selected(
+                                                    old(
+                                                        'Codigo_ficha',
+                                                        $aprendiz->Codigo_ficha ?? ''
+                                                    ) == $ficha->Codigo
+                                                )>
+
+                                                {{ $ficha->Codigo }}
+                                                -
+                                                {{ $ficha->programa->prog_Denominacion ?? 'Sin programa' }}
+
                                             </option>
+
                                         @endforeach
+
                                     </select>
                                     @error('Codigo_ficha')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -252,17 +325,40 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="Codigo_programa" class="font-weight-bold">Programa *</label>
-                                    <select name="Codigo_programa"
-                                            id="Codigo_programa"
-                                            class="form-control @error('Codigo_programa') is-invalid @enderror"
-                                            required>
-                                        <option value="">Seleccione un programa...</option>
+                                    <select
+                                        name="Codigo_programa"
+                                        id="Codigo_programa"
+                                        class="form-control @error('Codigo_programa') is-invalid @enderror"
+                                        required>
+
+                                        <option value="">
+                                            Seleccione un programa...
+                                        </option>
+
                                         @foreach($programas as $programa)
-                                            <option value="{{ $programa->prog_codigoPrograma }}" {{ old('Codigo_programa') == $programa->prog_codigoPrograma ? 'selected' : '' }}>
+
+                                            <option
+                                                value="{{ $programa->prog_codigoPrograma }}"
+                                                @selected(
+                                                    old(
+                                                        'Codigo_programa',
+                                                        $aprendiz->Codigo_programa ?? ''
+                                                    ) == $programa->prog_codigoPrograma
+                                                )>
+
                                                 {{ $programa->prog_Denominacion }}
+
                                             </option>
+
                                         @endforeach
+
                                     </select>
+
+                                    @error('Codigo_programa')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                    @enderror
                                     @error('Codigo_programa')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -272,17 +368,40 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="Codigo_centro" class="font-weight-bold">Centro *</label>
-                                    <select name="Codigo_centro"
-                                            id="Codigo_centro"
-                                            class="form-control @error('Codigo_centro') is-invalid @enderror"
-                                            required>
-                                        <option value="">Seleccione un centro...</option>
+                                    <select
+                                        name="Codigo_centro"
+                                        id="Codigo_centro"
+                                        class="form-control @error('Codigo_centro') is-invalid @enderror"
+                                        required>
+
+                                        <option value="">
+                                            Seleccione un centro...
+                                        </option>
+
                                         @foreach($centros as $centro)
-                                            <option value="{{ $centro->Codigo }}" {{ old('Codigo_centro') == $centro->Codigo ? 'selected' : '' }}>
+
+                                            <option
+                                                value="{{ $centro->Codigo }}"
+                                                @selected(
+                                                    old(
+                                                        'Codigo_centro',
+                                                        $aprendiz->Codigo_centro ?? ''
+                                                    ) == $centro->Codigo
+                                                )>
+
                                                 {{ $centro->cent_Denominacion }}
+
                                             </option>
+
                                         @endforeach
+
                                     </select>
+
+                                    @error('Codigo_centro')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                    @enderror
                                     @error('Codigo_centro')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -294,16 +413,39 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="Codigo_regional" class="font-weight-bold">Regional</label>
-                                    <select name="Codigo_regional"
-                                            id="Codigo_regional"
-                                            class="form-control @error('Codigo_regional') is-invalid @enderror">
-                                        <option value="">Seleccione una regional...</option>
+                                    <select
+                                        name="Codigo_regional"
+                                        id="Codigo_regional"
+                                        class="form-control @error('Codigo_regional') is-invalid @enderror">
+
+                                        <option value="">
+                                            Seleccione una regional...
+                                        </option>
+
                                         @foreach($regionales as $regional)
-                                            <option value="{{ $regional->Codigo }}" {{ old('Codigo_regional') == $regional->Codigo ? 'selected' : '' }}>
+
+                                            <option
+                                                value="{{ $regional->Codigo }}"
+                                                @selected(
+                                                    old(
+                                                        'Codigo_regional',
+                                                        $aprendiz->Codigo_regional ?? ''
+                                                    ) == $regional->Codigo
+                                                )>
+
                                                 {{ $regional->reg_Nombre ?? 'Regional' }}
+
                                             </option>
+
                                         @endforeach
+
                                     </select>
+
+                                    @error('Codigo_regional')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                    @enderror
                                     @error('Codigo_regional')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -328,15 +470,38 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="apr_ModalidadFormacion" class="font-weight-bold">Modalidad Formación *</label>
-                                    <select name="apr_ModalidadFormacion"
-                                            id="apr_ModalidadFormacion"
-                                            class="form-control @error('apr_ModalidadFormacion') is-invalid @enderror"
-                                            required>
-                                        <option value="">Seleccione...</option>
-                                        <option value="Presencial" {{ old('apr_ModalidadFormacion') == 'Presencial' ? 'selected' : '' }}>Presencial</option>
-                                        <option value="Virtual" {{ old('apr_ModalidadFormacion') == 'Virtual' ? 'selected' : '' }}>Virtual</option>
-                                        <option value="Mixta" {{ old('apr_ModalidadFormacion') == 'Mixta' ? 'selected' : '' }}>Mixta</option>
+                                    <select
+                                        name="apr_ModalidadFormacion"
+                                        id="apr_ModalidadFormacion"
+                                        class="form-control @error('apr_ModalidadFormacion') is-invalid @enderror"
+                                        required>
+
+                                        <option value="">
+                                            Seleccione...
+                                        </option>
+
+                                        <option value="Presencial"
+                                            @selected(old('apr_ModalidadFormacion') == 'Presencial')>
+                                            Presencial
+                                        </option>
+
+                                        <option value="Virtual"
+                                            @selected(old('apr_ModalidadFormacion') == 'Virtual')>
+                                            Virtual
+                                        </option>
+
+                                        <option value="Mixta"
+                                            @selected(old('apr_ModalidadFormacion') == 'Mixta')>
+                                            Mixta
+                                        </option>
+
                                     </select>
+
+                                    @error('apr_ModalidadFormacion')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                    @enderror
                                     @error('apr_ModalidadFormacion')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

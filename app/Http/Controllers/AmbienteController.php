@@ -2,136 +2,197 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Ambientes\AmbienteRequestCreate;
+use App\Http\Requests\Ambientes\AmbienteRequestUpdate;
 use App\Models\Ambiente;
-use App\Models\TipoAmbiente;
 use App\Models\EstadoAmbiente;
+use App\Models\TipoAmbiente;
+use App\Services\AmbienteService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class AmbienteController extends Controller
 {
-    public function index(Request $request)
-    {
-        $tipos = TipoAmbiente::all();
-        $estados = EstadoAmbiente::all();
+    public function __construct(
+        private readonly AmbienteService $service
+    ) {
+    }
 
-        $query = Ambiente::query()->with(['tipo_ambiente', 'estado_ambiente']);
+    public function index(Request $request): View
+    {
+        $tipos = TipoAmbiente::query()
+            ->orderBy('tip_Denominacion')
+            ->get();
+
+        $estados = EstadoAmbiente::query()
+            ->orderBy('est_Denominacion')
+            ->get();
+
+        $query = Ambiente::query()
+            ->with([
+                'tipo_ambiente',
+                'estado_ambiente'
+            ]);
 
         if ($request->filled('search')) {
-            $query->where('amb_Denominacion', 'like', '%' . $request->search . '%');
+            $query->where(
+                'amb_Denominacion',
+                'like',
+                "%{$request->search}%"
+            );
         }
 
         if ($request->filled('estado')) {
-            $query->where('Codigo_estado', $request->estado);
+            $query->where(
+                'Codigo_estado',
+                $request->estado
+            );
         }
 
         if ($request->filled('tipo')) {
-            $query->where('Codigo_tipo', $request->tipo);
+            $query->where(
+                'Codigo_tipo',
+                $request->tipo
+            );
         }
 
-        $ambientes = $query->orderBy('Codigo', 'desc')->paginate(10);
+        $ambientes = $query
+            ->latest('Codigo')
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('ambientes.index', compact('ambientes', 'tipos', 'estados'));
+        return view(
+            'ambientes.index',
+            compact('ambientes', 'tipos', 'estados')
+        );
     }
 
-    public function create()
+    public function create(): View
     {
-        $tipos = TipoAmbiente::all();
-        $estados = EstadoAmbiente::all();
+        $tipos = TipoAmbiente::query()
+            ->orderBy('tip_Denominacion')
+            ->get();
 
-        return view('ambientes.create', compact('tipos', 'estados'));
+        $estados = EstadoAmbiente::query()
+            ->orderBy('est_Denominacion')
+            ->get();
+
+        return view(
+            'ambientes.create',
+            compact('tipos', 'estados')
+        );
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'amb_Denominacion' => 'required|string|max:255',
-            'amb_Cupo' => 'required|integer|min:1',
-            'Codigo_tipo' => 'required|integer|exists:tbl_tipo_ambientes,Codigo',
-            'Codigo_estado' => 'required|integer|exists:tbl_estado_ambientes,Codigo',
-        ]);
+    public function store(
+        AmbienteRequestCreate $request
+    ): RedirectResponse {
+        $this->service->store(
+            $request->validated()
+        );
 
-        Ambiente::create($request->all());
-
-        return redirect()->route('ambientes.index')
-            ->with('success', 'Ambiente creado correctamente.');
+        return redirect()
+            ->route('ambientes.index')
+            ->with(
+                'success',
+                'Ambiente creado correctamente.'
+            );
     }
 
-    public function show($Codigo)
-    {
-        $ambiente = Ambiente::with([
+    public function show(
+        Ambiente $ambiente
+    ): View {
+        $ambiente->load([
             'tipo_ambiente',
             'estado_ambiente',
             'asignaciones_instructores.instructor',
-            'asignaciones_instructores.ficha_caracterizacion'
-        ])->findOrFail($Codigo);
-
-        return view('ambientes.show', compact('ambiente'));
-    }
-
-    public function edit($Codigo)
-    {
-        $ambiente = Ambiente::findOrFail($Codigo);
-        $tipos = TipoAmbiente::all();
-        $estados = EstadoAmbiente::all();
-
-        return view('ambientes.edit', compact('ambiente', 'tipos', 'estados'));
-    }
-
-    public function update(Request $request, $Codigo)
-    {
-        $request->validate([
-            'amb_Denominacion' => 'required|string|max:255',
-            'amb_Cupo' => 'required|integer|min:1',
-            'Codigo_tipo' => 'required|integer|exists:tbl_tipo_ambientes,Codigo',
-            'Codigo_estado' => 'required|integer|exists:tbl_estado_ambientes,Codigo',
+            'asignaciones_instructores.ficha_caracterizacion',
         ]);
 
-        $ambiente = Ambiente::findOrFail($Codigo);
-
-        // Si el ambiente pasa a mantenimiento, liberar asignaciones
-        if ($request->Codigo_estado == 3 && $ambiente->Codigo_estado != 3) {
-            $ambiente->asignaciones_instructores()->delete();
-        }
-
-        $ambiente->update($request->all());
-
-        return redirect()->route('ambientes.index')
-            ->with('success', 'Ambiente actualizado correctamente.');
+        return view(
+            'ambientes.show',
+            compact('ambiente')
+        );
     }
 
-    public function destroy($Codigo)
-    {
-        $ambiente = Ambiente::findOrFail($Codigo);
+    public function edit(
+        Ambiente $ambiente
+    ): View {
+        $tipos = TipoAmbiente::query()
+            ->orderBy('tip_Denominacion')
+            ->get();
 
-        if ($ambiente->asignaciones_instructores()->exists()) {
-            return redirect()->route('ambientes.index')
-                ->with('error', 'No se puede eliminar el ambiente porque tiene asignaciones activas.');
-        }
+        $estados = EstadoAmbiente::query()
+            ->orderBy('est_Denominacion')
+            ->get();
 
-        $ambiente->delete();
-
-        return redirect()->route('ambientes.index')
-            ->with('success', 'Ambiente eliminado correctamente.');
+        return view(
+            'ambientes.edit',
+            compact(
+                'ambiente',
+                'tipos',
+                'estados'
+            )
+        );
     }
 
-    // Métodos adicionales
-    public function ponerEnMantenimiento($Codigo)
-    {
-        $ambiente = Ambiente::findOrFail($Codigo);
+    public function update(
+        AmbienteRequestUpdate $request,
+        Ambiente $ambiente
+    ): RedirectResponse {
+        $this->service->update(
+            $ambiente,
+            $request->validated()
+        );
 
-        $ambiente->asignaciones_instructores()->delete();
-        $ambiente->update(['Codigo_estado' => 3]);
-
-        return redirect()->route('ambientes.index')
-            ->with('success', 'Ambiente puesto en mantenimiento correctamente.');
+        return redirect()
+            ->route('ambientes.index')
+            ->with(
+                'success',
+                'Ambiente actualizado correctamente.'
+            );
     }
 
-    public function liberar($Codigo)
-    {
-        $ambiente = Ambiente::findOrFail($Codigo);
-        $ambiente->update(['Codigo_estado' => 1]);
+    public function destroy(
+        Ambiente $ambiente
+    ): RedirectResponse {
+        $this->service->delete($ambiente);
 
-        return redirect()->route('ambientes.index')
-            ->with('success', 'Ambiente liberado correctamente.');
+        return redirect()
+            ->route('ambientes.index')
+            ->with(
+                'success',
+                'Ambiente eliminado correctamente.'
+            );
+    }
+
+    public function ponerEnMantenimiento(
+        Ambiente $ambiente
+    ): RedirectResponse {
+        $this->service->ponerEnMantenimiento(
+            $ambiente
+        );
+
+        return redirect()
+            ->route('ambientes.index')
+            ->with(
+                'success',
+                'Ambiente puesto en mantenimiento correctamente.'
+            );
+    }
+
+    public function liberar(
+        Ambiente $ambiente
+    ): RedirectResponse {
+        $this->service->liberar(
+            $ambiente
+        );
+
+        return redirect()
+            ->route('ambientes.index')
+            ->with(
+                'success',
+                'Ambiente liberado correctamente.'
+            );
     }
 }

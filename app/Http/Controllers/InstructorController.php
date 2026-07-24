@@ -3,152 +3,175 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InstructorRequest;
-use App\Models\Instructor;
-use App\Models\Vigencia;
 use App\Models\Competencia;
+use App\Models\Instructor;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Models\Vigencia;
+use App\Services\InstructorService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
-/**
- * Class InstructorController
- *
- * Controlador encargado de la gestión completa de instructores:
- * - Listado
- * - Crear / Editar
- * - Ver detalle
- * - Eliminar
- * - Gestión de competencias asociadas
- *
- * @package App\Http\Controllers
- */
 class InstructorController extends Controller
 {
-    /**
-     * Mostrar el listado de todos los instructores.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function index()
-    {
-        $instructores = Instructor::with(['vigencia', 'user'])->get();
-        return view('instructores.index', compact('instructores'));
+    public function __construct(
+        private readonly InstructorService $service
+    ) {
     }
 
-    /**
-     * Mostrar el formulario para crear un nuevo instructor.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function create()
+    public function index(): View
     {
-        $vigencias = Vigencia::all();
-        $competencias = Competencia::all();
-        $usuarios = User::doesntHave('instructor')->get();
+        $instructores = Instructor::query()
+            ->with([
+                'vigencia',
+                'user'
+            ])
+            ->paginate(15);
 
-        return view('instructores.create', compact('vigencias', 'competencias', 'usuarios'));
+        return view(
+            'instructores.index',
+            compact('instructores')
+        );
     }
 
-    /**
-     * Guardar un nuevo instructor en la base de datos.
-     *
-     * @param  \App\Http\Requests\InstructorRequest  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store(InstructorRequest $request)
+    public function create(): View
     {
-        $data = $request->only([
-            'inst_Nombres', 'inst_Apellido', 'inst_Identificacion', 'inst_TipoID',
-            'inst_Correo', 'inst_Telefono', 'inst_Direccion', 'Codigo_vigencia', 'Codigo_usuario'
+        return view(
+            'instructores.create',
+            $this->catalogos()
+        );
+    }
+
+    public function store(
+        InstructorRequest $request
+    ): RedirectResponse {
+
+        $this->service->store(
+            $request->validated(),
+            $request->input('competencias', [])
+        );
+
+        return redirect()
+            ->route('instructores.index')
+            ->with(
+                'success',
+                'Instructor creado correctamente.'
+            );
+    }
+
+    public function show(
+        Instructor $instructor
+    ): View {
+
+        $instructor->load([
+            'vigencia',
+            'user',
+            'competencias'
         ]);
-        $data['inst_TipoID'] = $data['inst_TipoID'] ?? 'CC';
 
-        $instructor = Instructor::create($data);
-
-        // Sincronizar competencias si se proporcionan
-        if ($request->filled('competencias')) {
-            $instructor->competencias()->sync($request->competencias);
-        }
-
-        return redirect()->route('instructores.index')
-            ->with('success', 'Instructor creado correctamente');
+        return view(
+            'instructores.show',
+            compact('instructor')
+        );
     }
 
-    /**
-     * Mostrar los detalles de un instructor específico.
-     *
-     * @param  \App\Models\Instructor  $instructor
-     * @return \Illuminate\View\View
-     */
-    public function show(Instructor $instructor)
-    {
-        $instructor->load(['vigencia', 'user', 'competencias']);
-        return view('instructores.show', compact('instructor'));
+    public function edit(
+        Instructor $instructor
+    ): View {
+
+        return view(
+            'instructores.edit',
+            array_merge(
+                [
+                    'instructor' => $instructor
+                ],
+                $this->catalogos($instructor)
+            )
+        );
     }
 
-    /**
-     * Mostrar el formulario de edición para un instructor existente.
-     *
-     * @param  \App\Models\Instructor  $instructor
-     * @return \Illuminate\View\View
-     */
-    public function edit(Instructor $instructor)
-    {
-        $vigencias = Vigencia::all();
-        $competencias = Competencia::all();
-        $usuarios = User::doesntHave('instructor')->orWhere('id', $instructor->Codigo_usuario)->get();
+    public function update(
+        InstructorRequest $request,
+        Instructor $instructor
+    ): RedirectResponse {
 
-        return view('instructores.edit', compact('instructor', 'vigencias', 'competencias', 'usuarios'));
+        $this->service->update(
+            $instructor,
+            $request->validated(),
+            $request->input('competencias', [])
+        );
+
+        return redirect()
+            ->route('instructores.index')
+            ->with(
+                'success',
+                'Instructor actualizado correctamente.'
+            );
     }
 
-    /**
-     * Actualizar los datos de un instructor existente en la base de datos.
-     *
-     * @param  \App\Http\Requests\InstructorRequest  $request
-     * @param  \App\Models\Instructor  $instructor
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update(InstructorRequest $request, Instructor $instructor)
-    {
-        $data = $request->only([
-            'inst_Nombres', 'inst_Apellido', 'inst_Identificacion', 'inst_TipoID',
-            'inst_Correo', 'inst_Telefono', 'inst_Direccion', 'Codigo_vigencia', 'Codigo_usuario'
-        ]);
-        $data['inst_TipoID'] = $data['inst_TipoID'] ?? 'CC';
+    public function destroy(
+        Instructor $instructor
+    ): RedirectResponse {
 
-        $instructor->update($data);
+        $this->service->delete(
+            $instructor
+        );
 
-        if ($request->filled('competencias')) {
-            $instructor->competencias()->sync($request->competencias);
-        }
-
-        return redirect()->route('instructores.index')
-            ->with('success', 'Instructor actualizado correctamente');
+        return redirect()
+            ->route('instructores.index')
+            ->with(
+                'success',
+                'Instructor eliminado correctamente.'
+            );
     }
 
-    /**
-     * Eliminar un instructor de la base de datos.
-     *
-     * @param  \App\Models\Instructor  $instructor
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function destroy(Instructor $instructor)
-    {
-        $instructor->delete();
-        return redirect()->route('instructores.index')
-            ->with('success', 'Instructor eliminado');
+    public function competencias(
+        Instructor $instructor
+    ): View {
+
+        $instructor->load('competencias');
+
+        $competencias = Competencia::orderBy(
+            'comp_Denominacion'
+        )->get();
+
+        return view(
+            'instructores.competencias',
+            compact(
+                'instructor',
+                'competencias'
+            )
+        );
     }
 
-    /**
-     * Mostrar las competencias asociadas a un instructor específico.
-     *
-     * @param  int  $instructorId
-     * @return \Illuminate\View\View
-     */
-    public function competencias($instructorId)
-    {
-        $instructor = Instructor::with('competencias')->findOrFail($instructorId);
-        $competencias = Competencia::all();
+    private function catalogos(
+        ?Instructor $instructor = null
+    ): array {
 
-        return view('instructores.competencias', compact('instructor', 'competencias'));
+        $usuarios = User::query()
+            ->when(
+                $instructor,
+                fn($query) => $query->whereDoesntHave(
+                    'instructor'
+                )->orWhere(
+                    'id',
+                    $instructor->Codigo_usuario
+                ),
+                fn($query) => $query->whereDoesntHave(
+                    'instructor'
+                )
+            )
+            ->get();
+
+        return [
+            'vigencias' => Vigencia::orderBy(
+                'vig_anio'
+            )->get(),
+
+            'competencias' => Competencia::orderBy(
+                'comp_Denominacion'
+            )->get(),
+
+            'usuarios' => $usuarios,
+        ];
     }
 }

@@ -2,74 +2,120 @@
 
 namespace App\Observers;
 
-use App\Models\AsignacionesInstructore;
 use App\Models\Ambiente;
+use App\Models\AsignacionesInstructore;
+use App\Models\EstadoAmbiente;
 
 class AsignacionesInstructorObserver
 {
-    /**
-     * Cuando se crea una asignación
-     */
-    public function created(AsignacionesInstructore $asignacion)
-    {
+    public function created(
+        AsignacionesInstructore $asignacion
+    ): void {
+
         if ($asignacion->Codigo_ambiente) {
-            $this->actualizarEstadoAmbiente($asignacion->Codigo_ambiente, 2); // 2 = OCUPADO
+
+            $this->actualizarEstadoAmbiente(
+                $asignacion->Codigo_ambiente,
+                EstadoAmbiente::OCUPADO
+            );
         }
     }
 
-    /**
-     * Cuando se actualiza una asignación
-     */
-    public function updated(AsignacionesInstructore $asignacion)
-    {
-        // Verificar si el ambiente cambió
-        if ($asignacion->isDirty('Codigo_ambiente')) {
-            $ambienteAnteriorId = $asignacion->getOriginal('Codigo_ambiente');
-            $nuevoAmbienteId = $asignacion->Codigo_ambiente;
+    public function updated(
+        AsignacionesInstructore $asignacion
+    ): void {
 
-            // Liberar ambiente anterior si existe
+        if (
+            $asignacion->wasChanged(
+                'Codigo_ambiente'
+            )
+        ) {
+
+            $ambienteAnteriorId =
+                $asignacion->getOriginal(
+                    'Codigo_ambiente'
+                );
+
+            $nuevoAmbienteId =
+                $asignacion->Codigo_ambiente;
+
             if ($ambienteAnteriorId) {
-                $this->actualizarEstadoAmbiente($ambienteAnteriorId, 1); // 1 = LIBRE/DISPONIBLE
+
+                $this->actualizarEstadoAmbiente(
+                    $ambienteAnteriorId,
+                    EstadoAmbiente::DISPONIBLE
+                );
             }
 
-            // Ocupar nuevo ambiente si existe
             if ($nuevoAmbienteId) {
-                $this->actualizarEstadoAmbiente($nuevoAmbienteId, 2); // 2 = OCUPADO
+
+                $this->actualizarEstadoAmbiente(
+                    $nuevoAmbienteId,
+                    EstadoAmbiente::OCUPADO
+                );
             }
         }
 
-        // Si el estado cambió a Finalizado o Cancelado, liberar ambiente
-        if ($asignacion->isDirty('Estado') && in_array($asignacion->Estado, ['Finalizado', 'Cancelado'])) {
+        if (
+            $asignacion->wasChanged(
+                'Estado'
+            )
+            &&
+            in_array(
+                $asignacion->Estado,
+                [
+                    AsignacionesInstructore::FINALIZADO,
+                    AsignacionesInstructore::CANCELADO,
+                ],
+                true
+            )
+        ) {
+
             if ($asignacion->Codigo_ambiente) {
-                $this->actualizarEstadoAmbiente($asignacion->Codigo_ambiente, 1); // 1 = LIBRE/DISPONIBLE
+
+                $this->actualizarEstadoAmbiente(
+                    $asignacion->Codigo_ambiente,
+                    EstadoAmbiente::DISPONIBLE
+                );
             }
         }
     }
 
-    /**
-     * Cuando se elimina una asignación
-     */
-    public function deleted(AsignacionesInstructore $asignacion)
-    {
+    public function deleted(
+        AsignacionesInstructore $asignacion
+    ): void {
+
         if ($asignacion->Codigo_ambiente) {
-            $this->actualizarEstadoAmbiente($asignacion->Codigo_ambiente, 1); // 1 = LIBRE/DISPONIBLE
+
+            $this->actualizarEstadoAmbiente(
+                $asignacion->Codigo_ambiente,
+                EstadoAmbiente::DISPONIBLE
+            );
         }
     }
 
-    /**
-     * Método helper para actualizar estado del ambiente
-     */
-    private function actualizarEstadoAmbiente($ambienteId, $nuevoEstado)
-    {
-        if (!$ambienteId) return;
+    private function actualizarEstadoAmbiente(
+        int $ambienteId,
+        int $nuevoEstado
+    ): void {
 
-        $ambiente = Ambiente::find($ambienteId);
+        $ambiente = Ambiente::find(
+            $ambienteId
+        );
 
-        if ($ambiente) {
-            // Solo actualizar si no está en mantenimiento (3 = MANTENIMIENTO)
-            if ($ambiente->Codigo_estado != 3) {
-                $ambiente->update(['Codigo_estado' => $nuevoEstado]);
-            }
+        if (!$ambiente) {
+            return;
         }
+
+        if (
+            $ambiente->Codigo_estado ===
+            EstadoAmbiente::MANTENIMIENTO
+        ) {
+            return;
+        }
+
+        $ambiente->forceFill([
+            'Codigo_estado' => $nuevoEstado
+        ])->saveQuietly();
     }
 }

@@ -5,37 +5,41 @@
  */
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class Session
- * 
- * @property string $id
- * @property int|null $user_id
- * @property string|null $ip_address
- * @property string|null $user_agent
- * @property string $payload
- * @property int $last_activity
- *
- * @package App\Models
- */
 class Session extends Model
 {
-	protected $table = 'sessions';
-	public $incrementing = false;
-	public $timestamps = false;
+    protected $table = 'sessions';
 
-	protected $casts = [
-		'user_id' => 'int',
-		'last_activity' => 'int'
-	];
+    public $incrementing = false;
 
-	protected $fillable = [
-		'user_id',
-		'ip_address',
-		'user_agent',
-		'payload',
-		'last_activity'
-	];
+    public $timestamps = false;
+
+    protected $casts = [
+        'user_id' => 'integer',
+        'last_activity' => 'integer',
+    ];
+
+    protected $hidden = [
+        'payload',
+        'ip_address',
+        'user_agent',
+    ];
+
+    protected $fillable = [
+        'user_id',
+        'ip_address',
+        'user_agent',
+        'payload',
+        'last_activity',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'user_id'
+        );
+    }
 }

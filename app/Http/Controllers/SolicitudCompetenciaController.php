@@ -2,178 +2,159 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Solicitud;
+use App\Http\Requests\SolicitudStoreRequest;
+use App\Http\Requests\SolicitudUpdateRequest;
+use App\Http\Requests\SolicitudRechazarRequest;
 use App\Models\Competencia;
 use App\Models\FichaCaracterizacion;
-use App\Models\Instructor;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Solicitud;
+use App\Services\SolicitudService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class SolicitudCompetenciaController extends Controller
 {
-    /* ============================================================
-    |  INSTRUCTOR — CREAR SOLICITUD
-    ============================================================ */
-    public function create()
-    {
-        $competencias = Competencia::where('comp_Tipo', 'Transversal')->get();
-        $fichas = FichaCaracterizacion::all();
-
-        return view('solicitudes.create', compact('competencias', 'fichas'));
+    public function __construct(
+        private readonly SolicitudService $service
+    ) {
     }
 
-    public function store(Request $request)
+    public function create(): View
     {
-        $request->validate([
-            'Codigo_competencia' => 'required|exists:tbl_competencias,comp_codigoCompetencia',
-            'Codigo_ficha' => 'required|exists:tbl_ficha_caracterizacions,Codigo',
-            'sol_FechaPropuesta' => 'required|date',
-            'sol_HorasSolicitadas' => 'required|integer|min:1',
-            'sol_Justificacion' => 'required|string'
+        return view('solicitudes.create', [
+            'competencias' => Competencia::where(
+                'comp_Tipo',
+                'Transversal'
+            )->get(),
+
+            'fichas' => FichaCaracterizacion::all(),
+        ]);
+    }
+
+    public function store(
+        SolicitudStoreRequest $request
+    ): RedirectResponse {
+
+        $this->service->crearSolicitud(
+            $request->validated()
+        );
+
+        return redirect()
+            ->route('solicitudes.mis-solicitudes')
+            ->with(
+                'success',
+                'Solicitud enviada exitosamente.'
+            );
+    }
+
+    public function edit(
+        Solicitud $solicitud
+    ): View {
+
+        $this->service->verificarPropietario(
+            $solicitud
+        );
+
+        return view('solicitudes.edit', [
+            'solicitud' => $solicitud,
+
+            'competencias' => Competencia::where(
+                'comp_Tipo',
+                'Transversal'
+            )->get(),
+
+            'fichas' => FichaCaracterizacion::all(),
+        ]);
+    }
+
+    public function update(
+        SolicitudUpdateRequest $request,
+        Solicitud $solicitud
+    ): RedirectResponse {
+
+        $this->service->actualizarSolicitud(
+            $solicitud,
+            $request->validated()
+        );
+
+        return redirect()
+            ->route('solicitudes.mis-solicitudes')
+            ->with(
+                'success',
+                'Solicitud actualizada exitosamente.'
+            );
+    }
+
+    public function misSolicitudes(): View
+    {
+        $solicitudes = $this->service
+            ->obtenerMisSolicitudes();
+
+        return view(
+            'solicitudes.mis-solicitudes',
+            compact('solicitudes')
+        );
+    }
+
+    public function indexCoordinador(): View
+    {
+        $solicitudes = Solicitud::with([
+            'instructor',
+            'competencia',
+            'ficha'
+        ])
+            ->latest('sol_FechaSolicitud')
+            ->paginate(15);
+
+        return view(
+            'coordinador.solicitudes',
+            compact('solicitudes')
+        );
+    }
+
+    public function show(
+        Solicitud $solicitud
+    ): View {
+
+        $solicitud->load([
+            'instructor',
+            'competencia',
+            'ficha'
         ]);
 
-        $instructor = Instructor::where('Codigo_usuario', Auth::id())->first();
-
-        if (!$instructor) {
-            return back()->with('error', 'No se encontró un instructor asociado a su usuario.');
-        }
-
-        Solicitud::create([
-            'sol_FechaSolicitud' => now(),
-            'sol_Estado' => 'Pendiente',
-            'sol_Justificacion' => $request->sol_Justificacion,
-            'Codigo_instructor' => $instructor->Codigo,
-            'Codigo_competencia' => $request->Codigo_competencia,
-            'Codigo_ficha' => $request->Codigo_ficha,
-            'sol_FechaPropuesta' => $request->sol_FechaPropuesta,
-            'sol_HorasSolicitadas' => $request->sol_HorasSolicitadas,
-            'sol_Prioridad' => $request->sol_Prioridad ?? 'Media'
-        ]);
-
-        return redirect()->route('solicitudes.mis-solicitudes')
-            ->with('success', 'Solicitud enviada exitosamente.');
+        return view(
+            'solicitudes.show',
+            compact('solicitud')
+        );
     }
 
-    /* ============================================================
-    |  EDITAR SOLICITUD (FORMULARIO)
-    ============================================================ */
-    public function edit(Solicitud $solicitud)
-    {
-        // Verificar que el usuario es el dueño de la solicitud
-        $instructor = Instructor::where('Codigo_usuario', Auth::id())->first();
+    public function aprobar(
+        Solicitud $solicitud
+    ): RedirectResponse {
 
-        if (!$instructor || $solicitud->Codigo_instructor != $instructor->Codigo) {
-            return redirect()->route('solicitudes.mis-solicitudes')
-                ->with('error', 'No tienes permiso para editar esta solicitud.');
-        }
+        $this->service->aprobar(
+            $solicitud
+        );
 
-        $competencias = Competencia::where('comp_Tipo', 'Transversal')->get();
-        $fichas = FichaCaracterizacion::all();
-
-        return view('solicitudes.edit', compact('solicitud', 'competencias', 'fichas'));
+        return back()->with(
+            'success',
+            'Solicitud aprobada exitosamente.'
+        );
     }
 
-    /* ============================================================
-    |  ACTUALIZAR SOLICITUD
-    ============================================================ */
-    public function update(Request $request, Solicitud $solicitud)
-    {
-        // Verificar permisos
-        $instructor = Instructor::where('Codigo_usuario', Auth::id())->first();
+    public function rechazar(
+        SolicitudRechazarRequest $request,
+        Solicitud $solicitud
+    ): RedirectResponse {
 
-        if (!$instructor || $solicitud->Codigo_instructor != $instructor->Codigo) {
-            return redirect()->route('solicitudes.mis-solicitudes')
-                ->with('error', 'No tienes permiso para editar esta solicitud.');
-        }
+        $this->service->rechazar(
+            $solicitud,
+            $request->sol_Observaciones
+        );
 
-        $request->validate([
-            'Codigo_competencia' => 'required|exists:tbl_competencias,comp_codigoCompetencia',
-            'Codigo_ficha' => 'required|exists:tbl_ficha_caracterizacions,Codigo',
-            'sol_FechaPropuesta' => 'required|date',
-            'sol_HorasSolicitadas' => 'required|integer|min:1',
-            'sol_Justificacion' => 'required|string',
-            'sol_Estado' => 'required|in:Pendiente,Aprobada,Rechazada'
-        ]);
-
-        $solicitud->update([
-            'Codigo_competencia' => $request->Codigo_competencia,
-            'Codigo_ficha' => $request->Codigo_ficha,
-            'sol_FechaPropuesta' => $request->sol_FechaPropuesta,
-            'sol_HorasSolicitadas' => $request->sol_HorasSolicitadas,
-            'sol_Justificacion' => $request->sol_Justificacion,
-            'sol_Estado' => $request->sol_Estado,
-            'sol_Prioridad' => $request->sol_Prioridad ?? 'Media'
-        ]);
-
-        return redirect()->route('solicitudes.mis-solicitudes')
-            ->with('success', 'Solicitud actualizada exitosamente.');
-    }
-
-    /* ============================================================
-    |  INSTRUCTOR — MIS SOLICITUDES
-    ============================================================ */
-    public function misSolicitudes()
-    {
-        $instructor = Instructor::where('Codigo_usuario', Auth::id())->first();
-
-        if (!$instructor) {
-            return redirect()->route('home')
-                ->with('error', 'No se encontró un instructor asociado a su usuario.');
-        }
-
-        $solicitudes = Solicitud::where('Codigo_instructor', $instructor->Codigo)
-            ->with(['competencia', 'ficha', 'instructor'])
-            ->orderBy('sol_FechaSolicitud', 'DESC')
-            ->get();
-
-        return view('solicitudes.mis-solicitudes', compact('solicitudes'));
-    }
-
-    /* ============================================================
-    |  COORDINADOR — LISTA DE SOLICITUDES
-    ============================================================ */
-    public function indexCoordinador()
-    {
-        $solicitudes = Solicitud::with(['instructor', 'competencia', 'ficha'])
-            ->orderBy('sol_FechaSolicitud', 'DESC')
-            ->get();
-
-        return view('coordinador.solicitudes', compact('solicitudes'));
-    }
-
-    /* ============================================================
-    |  VER DETALLE DE UNA SOLICITUD
-    ============================================================ */
-    public function show(Solicitud $solicitud)
-    {
-        $solicitud->load(['instructor', 'competencia', 'ficha']);
-        return view('solicitudes.show', compact('solicitud'));
-    }
-
-    /* ============================================================
-    |  APROBAR / RECHAZAR
-    ============================================================ */
-    public function aprobar(Solicitud $solicitud)
-    {
-        $solicitud->update([
-            'sol_Estado' => 'Aprobada',
-            'sol_FechaAprobacion' => now()
-        ]);
-
-        return back()->with('success', 'Solicitud aprobada exitosamente.');
-    }
-
-    public function rechazar(Request $request, Solicitud $solicitud)
-    {
-        $request->validate([
-            'sol_Observaciones' => 'required|string'
-        ]);
-
-        $solicitud->update([
-            'sol_Estado' => 'Rechazada',
-            'sol_Observaciones' => $request->sol_Observaciones
-        ]);
-
-        return back()->with('success', 'Solicitud rechazada exitosamente.');
+        return back()->with(
+            'success',
+            'Solicitud rechazada exitosamente.'
+        );
     }
 }

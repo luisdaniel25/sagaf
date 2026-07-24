@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class VwHorariosAprendice
- * 
+ *
  * @property int $aprendiz_id
  * @property string $apr_PrimerNombre
  * @property string|null $apr_SegundoNombre
@@ -36,40 +36,32 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $updated_at
  *
  * @package App\Models
- */
-class VwHorariosAprendice extends Model
+ */class VwHorariosAprendice extends Model
 {
-	protected $table = 'vw_horarios_aprendices';
-	public $incrementing = false;
+    protected $table = 'vw_horarios_aprendices';
 
-	protected $casts = [
-		'aprendiz_id' => 'int',
-		'ficha_codigo' => 'int',
-		'evento_id' => 'int',
-		'fecha_inicio' => 'datetime',
-		'fecha_fin' => 'datetime'
-	];
+    public $incrementing = false;
 
-	protected $fillable = [
-		'aprendiz_id',
-		'apr_PrimerNombre',
-		'apr_SegundoNombre',
-		'apr_Apellidos',
-		'apr_NumeroDocumento',
-		'apr_CorreoSena',
-		'ficha_codigo',
-		'programa',
-		'centro_formacion',
-		'evento_id',
-		'evento_titulo',
-		'evento_descripcion',
-		'fecha_inicio',
-		'fecha_fin',
-		'horaInicio',
-		'horaFinal',
-		'ambiente',
-		'competencia',
-		'instructor',
-		'regional'
-	];
+    public $timestamps = false;
+
+    protected $hidden = [
+        'apr_NumeroDocumento',
+        'apr_CorreoSena',
+    ];
+
+    protected $casts = [
+        'aprendiz_id' => 'integer',
+        'ficha_codigo' => 'integer',
+        'evento_id' => 'integer',
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime',
+    ];
+
+    public function scopePorAprendiz($query, int $aprendizId)
+    {
+        return $query->where(
+            'aprendiz_id',
+            $aprendizId
+        );
+    }
 }

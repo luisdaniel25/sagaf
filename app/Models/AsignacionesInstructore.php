@@ -1,47 +1,32 @@
 <?php
 
-/**
- * Created by Reliese Model.
- */
-
 namespace App\Models;
 
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class AsignacionesInstructore
- *
- * @property int $Codigo
- * @property int $Codigo_instructor
- * @property int $Codigo_ficha
- * @property int $Codigo_competencia
- * @property int|null $Codigo_ambiente
- * @property Carbon $FechaAsignacion
- * @property string|null $Estado
- * @property string|null $Observaciones
- *
- * @property Instructor $instructor
- * @property FichaCaracterizacion $ficha_caracterizacion
- * @property Competencia $competencia
- * @property Ambiente|null $ambiente
- * @property Collection|Notificacione[] $notificaciones
- *
- * @package App\Models
- */
 class AsignacionesInstructore extends Model
 {
     protected $table = 'tbl_asignaciones_instructores';
+
     protected $primaryKey = 'Codigo';
-    public $timestamps = false;
+
+    public const ASIGNADO = 'Asignado';
+
+    public const EN_CURSO = 'En curso';
+
+    public const FINALIZADO = 'Finalizado';
+
+    public const CANCELADO = 'Cancelado';
 
     protected $casts = [
-        'Codigo_instructor' => 'int',
-        'Codigo_ficha' => 'int',
-        'Codigo_competencia' => 'int',
-        'Codigo_ambiente' => 'int',
-        'FechaAsignacion' => 'datetime'
+        'Codigo_instructor' => 'integer',
+        'Codigo_ficha' => 'integer',
+        'Codigo_competencia' => 'integer',
+        'Codigo_ambiente' => 'integer',
+        'FechaAsignacion' => 'datetime',
     ];
 
     protected $fillable = [
@@ -51,31 +36,94 @@ class AsignacionesInstructore extends Model
         'Codigo_ambiente',
         'FechaAsignacion',
         'Estado',
-        'Observaciones'
+        'Observaciones',
     ];
 
-    public function instructor()
+    public function instructor(): BelongsTo
     {
-        return $this->belongsTo(Instructor::class, 'Codigo_instructor');
+        return $this->belongsTo(
+            Instructor::class,
+            'Codigo_instructor'
+        );
     }
 
-    public function ficha_caracterizacion()
+    public function ficha_caracterizacion(): BelongsTo
     {
-        return $this->belongsTo(FichaCaracterizacion::class, 'Codigo_ficha');
+        return $this->belongsTo(
+            FichaCaracterizacion::class,
+            'Codigo_ficha'
+        );
     }
 
-    public function competencia()
+    public function competencia(): BelongsTo
     {
-        return $this->belongsTo(Competencia::class, 'Codigo_competencia', 'comp_codigoCompetencia');
+        return $this->belongsTo(
+            Competencia::class,
+            'Codigo_competencia'
+        );
     }
 
-    public function ambiente()
+    public function ambiente(): BelongsTo
     {
-        return $this->belongsTo(Ambiente::class, 'Codigo_ambiente');
+        return $this->belongsTo(
+            Ambiente::class,
+            'Codigo_ambiente'
+        );
     }
 
-    public function notificaciones()
+    public function notificaciones(): HasMany
     {
-        return $this->hasMany(Notificacione::class, 'Codigo_asignacion');
+        return $this->hasMany(
+            \Notificacione::class,
+            'Codigo_asignacion'
+        );
+    }
+
+    public function scopeAsignadas(
+        Builder $query
+    ): Builder {
+        return $query->where(
+            'Estado',
+            self::ASIGNADO
+        );
+    }
+
+    public function scopeEnCurso(
+        Builder $query
+    ): Builder {
+        return $query->where(
+            'Estado',
+            self::EN_CURSO
+        );
+    }
+
+    public function scopeFinalizadas(
+        Builder $query
+    ): Builder {
+        return $query->where(
+            'Estado',
+            self::FINALIZADO
+        );
+    }
+
+    public function scopeCanceladas(
+        Builder $query
+    ): Builder {
+        return $query->where(
+            'Estado',
+            self::CANCELADO
+        );
+    }
+
+    public function getEstaActivaAttribute(): bool
+    {
+        return in_array(
+            $this->Estado,
+            [
+                self::ASIGNADO,
+                self::EN_CURSO
+            ],
+            true
+        );
     }
 }

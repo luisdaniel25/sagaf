@@ -8,66 +8,109 @@
 
 @section('content')
 
-    <div class="card">
+    <div class="card shadow-sm">
 
         <div class="card-header">
+
             <a href="{{ route('ambientes.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Volver
+                <i class="fas fa-arrow-left"></i>
+                Volver
             </a>
+
         </div>
 
         <div class="card-body">
 
             <div class="row">
 
-                <!-- Código -->
                 <div class="col-md-4">
+
                     <x-adminlte-input
                         name="codigo"
                         label="Código"
                         value="{{ $ambiente->Codigo }}"
-                        disabled
-                    />
+                        disabled>
+
+                        <x-slot name="prependSlot">
+                            <div class="input-group-text">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                        </x-slot>
+
+                    </x-adminlte-input>
+
                 </div>
 
-                <!-- Denominación -->
                 <div class="col-md-8">
+
                     <x-adminlte-input
                         name="denominacion"
                         label="Denominación"
                         value="{{ $ambiente->amb_Denominacion }}"
-                        disabled
-                    />
+                        disabled>
+
+                        <x-slot name="prependSlot">
+                            <div class="input-group-text">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        </x-slot>
+
+                    </x-adminlte-input>
+
                 </div>
 
-                <!-- Cupo -->
                 <div class="col-md-4">
+
                     <x-adminlte-input
                         name="cupo"
                         label="Cupo"
                         value="{{ $ambiente->amb_Cupo }}"
-                        disabled
-                    />
+                        disabled>
+
+                        <x-slot name="prependSlot">
+                            <div class="input-group-text">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </x-slot>
+
+                    </x-adminlte-input>
+
                 </div>
 
-                <!-- Tipo de Ambiente -->
                 <div class="col-md-4">
+
                     <x-adminlte-input
                         name="tipo_ambiente"
                         label="Tipo de Ambiente"
-                        value="{{ $ambiente->tipo->tip_Denominacion ?? 'Sin definir' }}"
-                        disabled
-                    />
+                        value="{{ $ambiente->tipo_ambiente->tip_Denominacion ?? 'Sin definir' }}"
+                        disabled>
+
+                        <x-slot name="prependSlot">
+                            <div class="input-group-text">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                        </x-slot>
+
+                    </x-adminlte-input>
+
                 </div>
 
-                <!-- Estado -->
                 <div class="col-md-4">
+
                     <x-adminlte-input
                         name="estado"
                         label="Estado"
-                        value="{{ $ambiente->estado->est_Denominacion ?? 'Desconocido' }}"
-                        disabled
-                    />
+                        value="{{ $ambiente->estado_ambiente->est_Denominacion ?? 'Desconocido' }}"
+                        disabled>
+
+                        <x-slot name="prependSlot">
+                            <div class="input-group-text">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                        </x-slot>
+
+                    </x-adminlte-input>
+
                 </div>
 
             </div>
@@ -75,19 +118,28 @@
             <hr>
 
             <div class="mt-3">
-                <a href="{{ route('ambientes.edit', $ambiente->Codigo) }}" class="btn btn-info">
-                    <i class="fas fa-edit"></i> Editar
+
+                <a href="{{ route('ambientes.edit', $ambiente) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i>
+                    Editar
                 </a>
 
-                <form action="{{ route('ambientes.destroy', $ambiente->Codigo) }}"
-                      method="POST" class="d-inline">
+                <form action="{{ route('ambientes.destroy', $ambiente) }}" method="POST" class="d-inline">
                     @csrf
                     @method('DELETE')
 
-                    <button class="btn btn-danger" onclick="return confirm('¿Seguro de eliminar?')">
-                        <i class="fas fa-trash"></i> Eliminar
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                        onclick="return confirm('¿Está seguro de eliminar este ambiente?')">
+
+                        <i class="fas fa-trash"></i>
+                        Eliminar
+
                     </button>
+
                 </form>
+
             </div>
 
         </div>

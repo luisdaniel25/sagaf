@@ -5,34 +5,35 @@
  */
 
 namespace App\Models;
-
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class TipoAmbiente
- * 
- * @property int $Codigo
- * @property string $tip_Denominacion
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property Collection|Ambiente[] $ambientes
- *
- * @package App\Models
- */
 class TipoAmbiente extends Model
 {
-	protected $table = 'tbl_tipo_ambientes';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_tipo_ambientes';
 
-	protected $fillable = [
-		'tip_Denominacion'
-	];
+    protected $primaryKey = 'Codigo';
 
-	public function ambientes()
-	{
-		return $this->hasMany(Ambiente::class, 'Codigo_tipo');
-	}
+    protected $fillable = [
+        'tip_Denominacion',
+    ];
+
+    public function ambientes(): HasMany
+    {
+        return $this->hasMany(
+            Ambiente::class,
+            'Codigo_tipo'
+        );
+    }
+
+    public function scopePorNombre(
+        $query,
+        string $nombre
+    )
+    {
+        return $query->where(
+            'tip_Denominacion',
+            $nombre
+        );
+    }
 }

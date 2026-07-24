@@ -3,101 +3,146 @@
 namespace App\Http\Controllers;
 
 use App\Services\NotificacionService;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class NotificacionController extends Controller
 {
-    protected $notificacionService;
-
-    public function __construct(NotificacionService $notificacionService)
-    {
-        $this->notificacionService = $notificacionService;
+    public function __construct(
+        private readonly NotificacionService $notificacionService
+    ) {
     }
 
     /**
-     * Mostrar todas las notificaciones
+     * Mostrar todas las notificaciones del usuario.
      */
-    public function index()
+    public function index(): View
     {
+        $usuarioId = Auth::id();
+
         $notificaciones = $this->notificacionService
-            ->obtenerNotificacionesUsuario(Auth::id(), 15);
+            ->obtenerNotificacionesUsuario(
+                $usuarioId,
+                15
+            );
 
         $totalNoLeidas = $this->notificacionService
-            ->contarNotificacionesNoLeidas(Auth::id());
+            ->contarNotificacionesNoLeidas(
+                $usuarioId
+            );
 
-        return view('notificaciones.index', compact('notificaciones', 'totalNoLeidas'));
+        return view(
+            'notificaciones.index',
+            compact(
+                'notificaciones',
+                'totalNoLeidas'
+            )
+        );
     }
 
     /**
-     * Mostrar notificaciones no leídas (para dropdown)
+     * Mostrar notificaciones no leídas para dropdown.
      */
-    public function noLeidas()
+    public function noLeidas(): View
     {
+        $usuarioId = Auth::id();
+
         $notificaciones = $this->notificacionService
-            ->obtenerNotificacionesNoLeidas(Auth::id());
+            ->obtenerNotificacionesNoLeidas(
+                $usuarioId
+            );
 
         $totalNoLeidas = $notificaciones->count();
 
-        return view('layouts.partials.notificaciones-dropdown',
-            compact('notificaciones', 'totalNoLeidas'));
+        return view(
+            'layouts.partials.notificaciones-dropdown',
+            compact(
+                'notificaciones',
+                'totalNoLeidas'
+            )
+        );
     }
 
     /**
-     * Marcar notificación como leída
+     * Marcar una notificación como leída.
      */
-    public function marcarLeida($id)
-    {
-        $result = $this->notificacionService->marcarComoLeida($id, Auth::id());
+    public function marcarLeida(
+        int $id
+    ): RedirectResponse {
 
-        if ($result) {
-            return redirect()->back()
-                ->with('success', 'Notificación marcada como leída');
-        }
+        $result = $this->notificacionService
+            ->marcarComoLeida(
+                $id,
+                Auth::id()
+            );
 
-        return redirect()->back()
-            ->with('error', 'No se pudo marcar la notificación como leída');
+        return redirect()
+            ->back()
+            ->with(
+                $result ? 'success' : 'error',
+                $result
+                    ? 'Notificación marcada como leída'
+                    : 'No se pudo marcar la notificación como leída'
+            );
     }
 
     /**
-     * Marcar todas como leídas
+     * Marcar todas las notificaciones como leídas.
      */
-    public function marcarTodasLeidas()
+    public function marcarTodasLeidas(): RedirectResponse
     {
-        $result = $this->notificacionService->marcarTodasComoLeidas(Auth::id());
+        $result = $this->notificacionService
+            ->marcarTodasComoLeidas(
+                Auth::id()
+            );
 
-        if ($result) {
-            return redirect()->back()
-                ->with('success', 'Todas las notificaciones marcadas como leídas');
-        }
-
-        return redirect()->back()
-            ->with('error', 'No se pudieron marcar las notificaciones como leídas');
+        return redirect()
+            ->back()
+            ->with(
+                $result ? 'success' : 'error',
+                $result
+                    ? 'Todas las notificaciones marcadas como leídas'
+                    : 'No se pudieron marcar las notificaciones como leídas'
+            );
     }
 
     /**
-     * Archivar notificación
+     * Archivar una notificación.
      */
-    public function archivar($id)
-    {
-        $result = $this->notificacionService->archivarNotificacion($id, Auth::id());
+    public function archivar(
+        int $id
+    ): RedirectResponse {
 
-        if ($result) {
-            return redirect()->back()
-                ->with('success', 'Notificación archivada');
-        }
+        $result = $this->notificacionService
+            ->archivarNotificacion(
+                $id,
+                Auth::id()
+            );
 
-        return redirect()->back()
-            ->with('error', 'No se pudo archivar la notificación');
+        return redirect()
+            ->back()
+            ->with(
+                $result ? 'success' : 'error',
+                $result
+                    ? 'Notificación archivada'
+                    : 'No se pudo archivar la notificación'
+            );
     }
 
     /**
-     * Obtener contador de notificaciones no leídas (para AJAX)
+     * Obtener contador de notificaciones no leídas.
      */
-    public function contarNoLeidas()
+    public function contarNoLeidas(): JsonResponse
     {
-        $total = $this->notificacionService->contarNotificacionesNoLeidas(Auth::id());
+        $total = $this->notificacionService
+            ->contarNotificacionesNoLeidas(
+                Auth::id()
+            );
 
-        return response()->json(['total' => $total]);
+        return response()->json([
+            'total' => $total
+        ]);
     }
 }

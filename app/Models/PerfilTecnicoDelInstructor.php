@@ -5,45 +5,32 @@
  */
 
 namespace App\Models;
-
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class PerfilTecnicoDelInstructor
- * 
- * @property int $Codigo
- * @property string $per_RequisitosAcademicos
- * @property string $per_Experiencia
- * @property string $per_CompetenciasMinimas
- * @property string $per_Observacion
- * @property int $Codigo_ra
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property ResultadoAprendizaje $resultado_aprendizaje
- *
- * @package App\Models
- */
 class PerfilTecnicoDelInstructor extends Model
 {
-	protected $table = 'tbl_perfil_tecnico_del_instructors';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_perfil_tecnico_del_instructors';
 
-	protected $casts = [
-		'Codigo_ra' => 'int'
-	];
+    protected $primaryKey = 'Codigo';
 
-	protected $fillable = [
-		'per_RequisitosAcademicos',
-		'per_Experiencia',
-		'per_CompetenciasMinimas',
-		'per_Observacion',
-		'Codigo_ra'
-	];
+    protected $casts = [
+        'Codigo_ra' => 'integer',
+    ];
 
-	public function resultado_aprendizaje()
-	{
-		return $this->belongsTo(ResultadoAprendizaje::class, 'Codigo_ra');
-	}
+    protected $fillable = [
+        'per_RequisitosAcademicos',
+        'per_Experiencia',
+        'per_CompetenciasMinimas',
+        'per_Observacion',
+        'Codigo_ra',
+    ];
+
+    public function resultadoAprendizaje(): BelongsTo
+    {
+        return $this->belongsTo(
+            ResultadoAprendizaje::class,
+            'Codigo_ra'
+        );
+    }
 }

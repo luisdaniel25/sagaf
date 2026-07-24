@@ -5,47 +5,40 @@
  */
 
 namespace App\Models;
-
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class DisponibilidadInstructore
- * 
- * @property int $Codigo
- * @property int $Codigo_instructor
- * @property string $dia_semana
- * @property Carbon $hora_inicio
- * @property Carbon $hora_fin
- * @property string|null $dis_Estado
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property Instructor $instructor
- *
- * @package App\Models
- */
 class DisponibilidadInstructore extends Model
 {
-	protected $table = 'tbl_disponibilidad_instructores';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_disponibilidad_instructores';
 
-	protected $casts = [
-		'Codigo_instructor' => 'int',
-		'hora_inicio' => 'datetime',
-		'hora_fin' => 'datetime'
-	];
+    protected $primaryKey = 'Codigo';
 
-	protected $fillable = [
-		'Codigo_instructor',
-		'dia_semana',
-		'hora_inicio',
-		'hora_fin',
-		'dis_Estado'
-	];
+    protected $casts = [
+        'Codigo_instructor' => 'integer',
+    ];
 
-	public function instructor()
-	{
-		return $this->belongsTo(Instructor::class, 'Codigo_instructor');
-	}
+    protected $fillable = [
+        'Codigo_instructor',
+        'dia_semana',
+        'hora_inicio',
+        'hora_fin',
+        'dis_Estado',
+    ];
+
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(
+            Instructor::class,
+            'Codigo_instructor'
+        );
+    }
+
+    public function scopeActivas($query)
+    {
+        return $query->where(
+            'dis_Estado',
+            'ACTIVO'
+        );
+    }
 }

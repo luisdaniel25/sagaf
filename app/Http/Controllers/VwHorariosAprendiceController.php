@@ -2,110 +2,143 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\HorarioFechaRequest;
+use App\Http\Requests\HorarioRangoRequest;
 use App\Models\VwHorariosAprendice;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VwHorariosAprendiceController extends Controller
 {
-    /* ============================================================
-       LISTA GENERAL DE HORARIOS (AJAX + FILTROS)
-    ============================================================ */
-    /**
-     * Muestra la lista de horarios.
-     * Soporta filtros dinámicos (documento, ficha, fechas) y paginación.
-     * Si la petición es AJAX, devuelve JSON, de lo contrario devuelve la vista.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
-    {
+    public function index(
+        Request $request
+    ): View {
+
         $query = VwHorariosAprendice::query();
 
-        // Aplicar filtros dinámicos
-        $filters = ['documento' => 'apr_NumeroDocumento', 'ficha' => 'ficha_codigo'];
-        foreach ($filters as $param => $column) {
-            if ($request->filled($param)) {
-                $query->where($column, 'like', "%{$request->$param}%");
-            }
+        if ($request->filled('documento')) {
+            $query->where(
+                'apr_NumeroDocumento',
+                'like',
+                "%{$request->documento}%"
+            );
         }
 
-        // Filtro por fecha o rango
+        if ($request->filled('ficha')) {
+            $query->where(
+                'ficha_codigo',
+                'like',
+                "%{$request->ficha}%"
+            );
+        }
+
         if ($request->filled('fecha')) {
-            $query->whereDate('fecha_inicio', $request->fecha);
-        } elseif ($request->filled('desde') && $request->filled('hasta')) {
-            $query->whereBetween('fecha_inicio', [$request->desde, $request->hasta]);
+
+            $query->whereDate(
+                'fecha_inicio',
+                $request->fecha
+            );
+
+        } elseif (
+            $request->filled('desde')
+            &&
+            $request->filled('hasta')
+        ) {
+
+            $query->whereBetween(
+                'fecha_inicio',
+                [
+                    $request->desde,
+                    $request->hasta
+                ]
+            );
         }
 
-        $query->orderBy('fecha_inicio', 'asc');
+        $horarios = $query
+            ->orderBy('fecha_inicio')
+            ->paginate(15)
+            ->withQueryString();
 
-        // Paginación
-        $horarios = $query->paginate(15);
-
-        // Obtener datos para los filtros select2
-        $aprendices = VwHorariosAprendice::select('aprendiz_id','apr_PrimerNombre','apr_Apellidos')->distinct()->get();
-        $fichas = VwHorariosAprendice::select('ficha_codigo')->distinct()->get();
-        $instructores = VwHorariosAprendice::select('instructor')->distinct()->get();
-
-        // Pasar todo a la vista
-        return view('horarios.index', compact('horarios','aprendices','fichas','instructores'));
+        return view('horarios.index', [
+            'horarios' => $horarios,
+            'aprendices' => $this->aprendices(),
+            'fichas' => $this->fichas(),
+            'instructores' => $this->instructores(),
+        ]);
     }
 
+    public function porAprendiz(
+        int $id
+    ): JsonResponse {
 
-    /* ============================================================
-       HORARIOS POR APRENDIZ / FICHA / EVENTO
-    ============================================================ */
-    public function porAprendiz($id)
+        return response()->json(
+            VwHorariosAprendice::where(
+                'aprendiz_id',
+                $id
+            )->get()
+        );
+    }
+
+    public function porFicha(
+        int $ficha
+    ): JsonResponse {
+
+        return response()->json(
+            VwHorariosAprendice::where(
+                'ficha_codigo',
+                $ficha
+            )->get()
+        );
+    }
+
+    public function porEvento(
+        int $eventoId
+    ): JsonResponse {
+
+        return response()->json(
+            VwHorariosAprendice::where(
+                'evento_id',
+                $eventoId
+            )->get()
+        );
+    }
+
+    public function porFecha(
+        HorarioFechaRequest $request
+    ): JsonResponse {
+
+        return response()->json(
+            VwHorariosAprendice::whereDate(
+                'fecha_inicio',
+                $request->fecha
+            )->get()
+        );
+    }
+
+    public function porRango(
+        HorarioRangoRequest $request
+    ): JsonResponse {
+
+        return response()->json(
+            VwHorariosAprendice::whereBetween(
+                'fecha_inicio',
+                [
+                    $request->desde,
+                    $request->hasta
+                ]
+            )->get()
+        );
+    }
+
+    public function calendario(): View
     {
-        $horarios = VwHorariosAprendice::where('aprendiz_id', $id)->get();
-        return response()->json($horarios);
+        return view(
+            'horarios.calendario'
+        );
     }
 
-    public function porFicha($ficha)
-    {
-        $horarios = VwHorariosAprendice::where('ficha_codigo', $ficha)->get();
-        return response()->json($horarios);
-    }
-
-    public function porEvento($eventoId)
-    {
-        $horarios = VwHorariosAprendice::where('evento_id', $eventoId)->get();
-        return response()->json($horarios);
-    }
-
-    public function porFecha(Request $request)
-    {
-        $request->validate(['fecha' => 'required|date']);
-        $horarios = VwHorariosAprendice::whereDate('fecha_inicio', $request->fecha)->get();
-        return response()->json($horarios);
-    }
-
-    public function porRango(Request $request)
-    {
-        $request->validate(['desde' => 'required|date', 'hasta' => 'required|date']);
-        $horarios = VwHorariosAprendice::whereBetween('fecha_inicio', [$request->desde, $request->hasta])->get();
-        return response()->json($horarios);
-    }
-
-    /* ============================================================
-       VISTA: CALENDARIO FULLCALENDAR
-    ============================================================ */
-    public function calendario()
-    {
-        return view('horarios.calendario');
-    }
-
-    /* ============================================================
-       DATOS PARA FULLCALENDAR (JSON)
-    ============================================================ */
-    /**
-     * Devuelve los horarios en formato JSON para FullCalendar.
-     * Incluye propiedades extendidas como ambiente, instructor, competencia,
-     * y color según tipo de evento.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function calendarioData()
+    public function calendarioData(): JsonResponse
     {
         $eventos = VwHorariosAprendice::select(
             'evento_id',
@@ -114,33 +147,54 @@ class VwHorariosAprendiceController extends Controller
             'fecha_fin',
             'ambiente',
             'instructor',
-            'competencia',
-            'tipo_evento' // opcional para definir color
+            'competencia'
         )->get();
 
-        $data = $eventos->map(function ($h) {
-            // Asignar color según tipo de evento
-            $color = match($h->tipo_evento ?? 'default') {
-                'teorico' => '#3498db',
-                'practico' => '#2ecc71',
-                'administrativo' => '#e67e22',
-                default => '#95a5a6',
-            };
+        $data = $eventos->map(
+            fn ($evento) => [
+                'id' => $evento->evento_id,
+                'title' => $evento->evento_titulo,
+                'start' => $evento->fecha_inicio,
+                'end' => $evento->fecha_fin,
 
-            return [
-                'id'    => $h->evento_id,
-                'title' => $h->evento_titulo,
-                'start' => $h->fecha_inicio,
-                'end'   => $h->fecha_fin,
-                'color' => $color,
                 'extendedProps' => [
-                    'ambiente'    => $h->ambiente,
-                    'instructor'  => $h->instructor,
-                    'competencia' => $h->competencia,
+                    'ambiente' => $evento->ambiente,
+                    'instructor' => $evento->instructor,
+                    'competencia' => $evento->competencia,
                 ],
-            ];
-        });
+            ]
+        );
 
-        return response()->json($data);
+        return response()->json(
+            $data
+        );
+    }
+
+    private function aprendices()
+    {
+        return VwHorariosAprendice::query()
+            ->select(
+                'aprendiz_id',
+                'apr_PrimerNombre',
+                'apr_Apellidos'
+            )
+            ->distinct()
+            ->get();
+    }
+
+    private function fichas()
+    {
+        return VwHorariosAprendice::query()
+            ->select('ficha_codigo')
+            ->distinct()
+            ->get();
+    }
+
+    private function instructores()
+    {
+        return VwHorariosAprendice::query()
+            ->select('instructor')
+            ->distinct()
+            ->get();
     }
 }

@@ -5,51 +5,49 @@
  */
 
 namespace App\Models;
-
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class InstructorCompetencia
- * 
- * @property int $Codigo
- * @property int $Codigo_instructor
- * @property int $Codigo_competencia
- * @property string|null $hab_Estado
- * @property Carbon|null $hab_FechaHabilitacion
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property Competencia $competencia
- * @property Instructor $instructor
- *
- * @package App\Models
- */
 class InstructorCompetencia extends Model
 {
-	protected $table = 'tbl_instructor_competencias';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_instructor_competencias';
 
-	protected $casts = [
-		'Codigo_instructor' => 'int',
-		'Codigo_competencia' => 'int',
-		'hab_FechaHabilitacion' => 'datetime'
-	];
+    protected $primaryKey = 'Codigo';
 
-	protected $fillable = [
-		'Codigo_instructor',
-		'Codigo_competencia',
-		'hab_Estado',
-		'hab_FechaHabilitacion'
-	];
+    protected $casts = [
+        'Codigo_instructor' => 'integer',
+        'Codigo_competencia' => 'integer',
+        'hab_FechaHabilitacion' => 'datetime',
+    ];
 
-	public function competencia()
-	{
-		return $this->belongsTo(Competencia::class, 'Codigo_competencia');
-	}
+    protected $fillable = [
+        'Codigo_instructor',
+        'Codigo_competencia',
+        'hab_Estado',
+        'hab_FechaHabilitacion',
+    ];
 
-	public function instructor()
-	{
-		return $this->belongsTo(Instructor::class, 'Codigo_instructor');
-	}
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(
+            Instructor::class,
+            'Codigo_instructor'
+        );
+    }
+
+    public function competencia(): BelongsTo
+    {
+        return $this->belongsTo(
+            Competencia::class,
+            'Codigo_competencia'
+        );
+    }
+
+    public function scopeActivas($query)
+    {
+        return $query->where(
+            'hab_Estado',
+            'ACTIVO'
+        );
+    }
 }

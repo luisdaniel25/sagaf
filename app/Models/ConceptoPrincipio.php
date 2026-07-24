@@ -1,45 +1,43 @@
 <?php
 
-/**
- * Created by Reliese Model.
- */
-
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class ConceptoPrincipio
- * 
- * @property int $Codigo
- * @property string $con_Denominacion
- * @property string $con_Observacion
- * @property int $Codigo_resultado_aprendizaje
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * 
- * @property ResultadoAprendizaje $resultado_aprendizaje
- *
- * @package App\Models
- */
 class ConceptoPrincipio extends Model
 {
-	protected $table = 'tbl_concepto_principios';
-	protected $primaryKey = 'Codigo';
+    protected $table = 'tbl_concepto_principios';
 
-	protected $casts = [
-		'Codigo_resultado_aprendizaje' => 'int'
-	];
+    protected $primaryKey = 'Codigo';
 
-	protected $fillable = [
-		'con_Denominacion',
-		'con_Observacion',
-		'Codigo_resultado_aprendizaje'
-	];
+    protected $keyType = 'int';
 
-	public function resultado_aprendizaje()
-	{
-		return $this->belongsTo(ResultadoAprendizaje::class, 'Codigo_resultado_aprendizaje');
-	}
+    public $incrementing = true;
+
+    protected $casts = [
+        'Codigo_resultado_aprendizaje' => 'integer',
+    ];
+
+    protected $fillable = [
+        'con_Denominacion',
+        'con_Observacion',
+        'Codigo_resultado_aprendizaje',
+    ];
+
+    public function resultadoAprendizaje(): BelongsTo
+    {
+        return $this->belongsTo(
+            ResultadoAprendizaje::class,
+            'Codigo_resultado_aprendizaje'
+        );
+    }
+
+    public function scopePorResultado($query, int $resultadoId)
+    {
+        return $query->where(
+            'Codigo_resultado_aprendizaje',
+            $resultadoId
+        );
+    }
 }

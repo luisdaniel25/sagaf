@@ -256,7 +256,7 @@ return [
     |
     */
 
-    'use_route_url' => false,
+    'use_route_url' => true,
     'dashboard_url' => 'home',
     'logout_url' => 'logout',
     'login_url' => 'login',
@@ -308,149 +308,156 @@ return [
 | https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Menu-Configuration
 |
 */
-
     'menu' => [
 
-        //  ELEMENTOS DEL NAVBAR SUPERIOR
         [
             'type' => 'navbar-search',
             'text' => 'search',
             'topnav_right' => true,
         ],
+
         [
             'type' => 'fullscreen-widget',
             'topnav_right' => true,
         ],
 
-        //  BÚSQUEDA EN LA SIDEBAR
         [
             'type' => 'sidebar-menu-search',
             'text' => 'search',
         ],
 
-        // GESTIÓN DE AMBIENTES
         ['header' => 'GESTIÓN DE AMBIENTES'],
+
         [
             'text' => 'Ambientes',
-            'icon' => 'fas fa-fw fa-door-open',
+            'icon' => 'fas fa-door-open',
             'route' => 'ambientes.index',
         ],
+
         [
             'text' => 'Registrar Ambiente',
-            'icon' => 'fas fa-fw fa-plus-circle',
+            'icon' => 'fas fa-plus-circle',
             'route' => 'ambientes.create',
         ],
+
         [
             'text' => 'Tipos de Ambiente',
-            'icon' => 'fas fa-fw fa-tags',
+            'icon' => 'fas fa-tags',
             'route' => 'tipo-ambientes.index',
         ],
 
-        // ASIGNACIONES
         ['header' => 'ASIGNACIONES'],
+
         [
             'text' => 'Asignaciones Instructores',
-            'icon' => 'fas fa-fw fa-chalkboard-teacher',
+            'icon' => 'fas fa-chalkboard-teacher',
             'route' => 'asignaciones.index',
         ],
+
         [
             'text' => 'Crear Asignación',
-            'icon' => 'fas fa-fw fa-plus-circle',
+            'icon' => 'fas fa-plus-circle',
             'route' => 'asignaciones.create',
         ],
 
-        //FICHAS
         ['header' => 'FICHAS DE CARACTERIZACIÓN'],
+
         [
             'text' => 'Crear Ficha de Caracterización',
-            'icon' => 'fas fa-fw fa-plus-circle',
+            'icon' => 'fas fa-plus-circle',
             'route' => 'fichas.create',
         ],
+
         [
             'text' => 'Fichas de Caracterización',
-            'icon' => 'fas fa-fw fa-id-card',
+            'icon' => 'fas fa-id-card',
             'route' => 'fichas.index',
         ],
 
-        // GESTIÓN DE APRENDIZ
-        ['header' => 'GESTIÓN DE APRENDIZ'],
+        ['header' => 'GESTIÓN DE APRENDICES'],
+
         [
             'text' => 'Aprendices',
-            'icon' => 'fas fa-fw fa-users',
+            'icon' => 'fas fa-users',
             'route' => 'aprendices.index',
         ],
+
         [
-            'text' => 'Registrar Aprendices',
-            'icon' => 'fas fa-fw fa-users',
+            'text' => 'Registrar Aprendiz',
+            'icon' => 'fas fa-user-plus',
             'route' => 'aprendices.create',
         ],
 
-        // GESTIÓN DE EVENTOS
-        ['header' => 'GESTION DE EVENTOS'],
+        ['header' => 'GESTIÓN DE EVENTOS'],
+
         [
             'text' => 'Eventos',
-            'icon' => 'fas fa-fw fa-file-alt',
+            'icon' => 'fas fa-calendar-check',
             'route' => 'eventos.index',
         ],
+
         [
             'text' => 'Horarios',
-            'icon' => 'fas fa-fw fa-file-alt',
+            'icon' => 'fas fa-calendar-alt',
             'route' => 'horarios.index',
         ],
 
-        // GESTIÓN DE INSTRUCTORES
         ['header' => 'GESTIÓN DE INSTRUCTORES'],
+
         [
             'text' => 'Instructores',
-            'icon' => 'fas fa-fw fa-users',
+            'icon' => 'fas fa-users',
             'route' => 'instructores.index',
         ],
+
         [
             'text' => 'Registrar Instructor',
-            'icon' => 'fas fa-fw fa-user-plus',
+            'icon' => 'fas fa-user-plus',
             'route' => 'instructores.create',
         ],
 
-        // GESTIÓN DE PROGRAMAS FORMACIÓN
-        ['header' => 'GESTION DE PROGRAMAS FORMACIÓN'],
+        ['header' => 'GESTIÓN DE PROGRAMAS'],
+
         [
             'text' => 'Programas Formación',
-            'icon' => 'fas fa-fw fa-file-alt',
+            'icon' => 'fas fa-graduation-cap',
             'route' => 'programas.index',
         ],
+
         [
-            'text' => 'Crear Programa Formación',
-            'icon' => 'fas fa-fw fa-plus-circle',
+            'text' => 'Crear Programa',
+            'icon' => 'fas fa-plus-circle',
             'route' => 'programas.create',
         ],
 
-        // NOTIFICACIONES
         ['header' => 'NOTIFICACIONES'],
+
         [
             'text' => 'Notificaciones',
-            'icon' => 'fas fa-fw fa-bell',
+            'icon' => 'fas fa-bell',
             'route' => 'notificaciones.index',
         ],
 
-        // SOLICITUDES DE PROGRAMACIÓN
         ['header' => 'SOLICITUDES DE PROGRAMACIÓN'],
+
         [
             'text' => 'Crear Solicitud',
-            'icon' => 'fas fa-fw fa-plus-circle',
+            'icon' => 'fas fa-plus-circle',
             'route' => 'solicitudes.create',
         ],
+
         [
             'text' => 'Mis Solicitudes',
-            'icon' => 'fas fa-fw fa-file-alt',
+            'icon' => 'fas fa-clipboard-list',
             'route' => 'solicitudes.mis-solicitudes',
         ],
+
         [
             'text' => 'Solicitudes Pendientes',
-            'icon' => 'fas fa-fw fa-tasks',
+            'icon' => 'fas fa-tasks',
             'route' => 'solicitudes.coordinador',
         ],
     ],
-
     /*
 |--------------------------------------------------------------------------
 | Menu Filters
@@ -486,8 +493,9 @@ return [
     */
 
     'plugins' => [
+
         'Datatables' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',
@@ -506,18 +514,30 @@ return [
                 ],
             ],
         ],
+
         'Select2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',
                     'asset' => false,
-                    'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js',
+                    'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js',
                 ],
                 [
                     'type' => 'css',
                     'asset' => false,
-                    'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.css',
+                    'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css',
+                ],
+            ],
+        ],
+
+        'Sweetalert2' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => '//cdn.jsdelivr.net/npm/sweetalert2@11',
                 ],
             ],
         ],

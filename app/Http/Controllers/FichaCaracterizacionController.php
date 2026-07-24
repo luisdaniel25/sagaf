@@ -2,124 +2,170 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FichaCaracterizacion;
+use App\Http\Requests\FichaStoreRequest;
+use App\Http\Requests\FichaUpdateRequest;
 use App\Models\CentroFormacion;
+use App\Models\FichaCaracterizacion;
 use App\Models\Modalidad;
 use App\Models\Programa;
+use App\Services\FichaCaracterizacionService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class FichaCaracterizacionController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly FichaCaracterizacionService $service
+    ) {
+    }
+
+    public function index(Request $request): View
     {
-        $query = FichaCaracterizacion::query()->with([
-            'centro_formacion',
-            'modalidad',
-            'programa'
-        ]);
+        $query = FichaCaracterizacion::query()
+            ->with([
+                'centro_formacion',
+                'modalidad',
+                'programa'
+            ]);
 
         if ($request->filled('search')) {
-            $query->where('Codigo', 'like', '%' . $request->search . '%');
+            $query->where(
+                'Codigo',
+                'like',
+                "%{$request->search}%"
+            );
         }
 
-        $fichas = $query->orderBy('Codigo', 'desc')->paginate(10);
+        $fichas = $query
+            ->latest('Codigo')
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('fichas.index', compact('fichas'));
+        return view(
+            'fichas.index',
+            compact('fichas')
+        );
     }
 
-    public function create()
+    public function create(): View
     {
-        $modalidades = Modalidad::all();
-        $centros = CentroFormacion::all();
-        $programas = Programa::all();
-
-        // Debug para verificar datos
-        // dd($modalidades, $centros, $programas);
-
-        return view('fichas.create', compact('modalidades', 'centros', 'programas'));
+        return view(
+            'fichas.create',
+            $this->catalogos()
+        );
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'Codigo' => 'required|integer|unique:tbl_ficha_caracterizacions,Codigo',
-            'fich_Inicio' => 'required|date',
-            'fich_Fin' => 'required|date|after:fich_Inicio',
-            'fich_Etapa' => 'required|string|in:Lectiva,Productiva',
-            'Codigo_modalidad' => 'required|integer|exists:tbl_modalidads,id',
-            'Codigo_programa' => 'required|integer|exists:tbl_programas,prog_codigoPrograma',
-            'Codigo_centro' => 'required|integer|exists:tbl_centro_formacions,Codigo',
-        ]);
+    public function store(
+        FichaStoreRequest $request
+    ): RedirectResponse {
 
-        FichaCaracterizacion::create($request->all());
+        $this->service->store(
+            $request->validated()
+        );
 
-        return redirect()->route('fichas.index')
-            ->with('success', 'Ficha creada correctamente.');
+        return redirect()
+            ->route('fichas.index')
+            ->with(
+                'success',
+                'Ficha creada correctamente.'
+            );
     }
 
-    public function show($id)
-    {
-        $ficha = FichaCaracterizacion::with([
+    public function show(
+        FichaCaracterizacion $ficha
+    ): View {
+
+        $ficha->load([
             'centro_formacion',
             'modalidad',
             'programa',
             'aprendizs'
-        ])->findOrFail($id);
-
-        return view('fichas.show', compact('ficha'));
-    }
-
-    public function edit($id)
-    {
-        $ficha = FichaCaracterizacion::findOrFail($id);
-
-        $modalidades = Modalidad::all();
-        $centros = CentroFormacion::all();
-        $programas = Programa::all();
-
-        return view('fichas.edit', compact('ficha', 'modalidades', 'centros', 'programas'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'fich_Inicio' => 'required|date',
-            'fich_Fin' => 'required|date|after:fich_Inicio',
-            'fich_Etapa' => 'required|string|in:Lectiva,Productiva',
-            'Codigo_modalidad' => 'required|integer|exists:tbl_modalidads,id',
-            'Codigo_programa' => 'required|integer|exists:tbl_programas,prog_codigoPrograma',
-            'Codigo_centro' => 'required|integer|exists:tbl_centro_formacions,Codigo',
         ]);
 
-        $ficha = FichaCaracterizacion::findOrFail($id);
-        $ficha->update($request->all());
-
-        return redirect()->route('fichas.index')
-            ->with('success', 'Ficha actualizada correctamente.');
+        return view(
+            'fichas.show',
+            compact('ficha')
+        );
     }
 
-    public function destroy($id)
-    {
-        $ficha = FichaCaracterizacion::findOrFail($id);
+    public function edit(
+        FichaCaracterizacion $ficha
+    ): View {
 
-        // Verificar si hay relaciones antes de eliminar
-        if ($ficha->aprendizs()->count() > 0) {
-            return redirect()->route('fichas.index')
-                ->with('error', 'No se puede eliminar la ficha porque tiene aprendices asociados.');
-        }
-
-        $ficha->delete();
-
-        return redirect()->route('fichas.index')
-            ->with('success', 'Ficha eliminada correctamente.');
+        return view(
+            'fichas.edit',
+            array_merge(
+                ['ficha' => $ficha],
+                $this->catalogos()
+            )
+        );
     }
 
-    /**
-     * AJAX: programas por centro
-     */
-    public function programasPorCentro($centroId)
+    public function update(
+        FichaUpdateRequest $request,
+        FichaCaracterizacion $ficha
+    ): RedirectResponse {
+
+        $this->service->update(
+            $ficha,
+            $request->validated()
+        );
+
+        return redirect()
+            ->route('fichas.index')
+            ->with(
+                'success',
+                'Ficha actualizada correctamente.'
+            );
+    }
+
+    public function destroy(
+        FichaCaracterizacion $ficha
+    ): RedirectResponse {
+
+        $this->service->delete($ficha);
+
+        return redirect()
+            ->route('fichas.index')
+            ->with(
+                'success',
+                'Ficha eliminada correctamente.'
+            );
+    }
+
+    public function programasPorCentro(
+        int $centroId
+    ): JsonResponse {
+
+        $programas = Programa::query()
+            ->where(
+                'Codigo_centro',
+                $centroId
+            )
+            ->orderBy('prog_Denominacion')
+            ->get();
+
+        return response()->json(
+            $programas
+        );
+    }
+
+    private function catalogos(): array
     {
-        $programas = Programa::where('Codigo_centro', $centroId)->get();
-        return response()->json($programas);
+        return [
+            'modalidades' => Modalidad::orderBy(
+                'mod_Denominacion'
+            )->get(),
+
+            'centros' => CentroFormacion::orderBy(
+                'cen_Denominacion'
+            )->get(),
+
+            'programas' => Programa::orderBy(
+                'prog_Denominacion'
+            )->get(),
+        ];
     }
 }
